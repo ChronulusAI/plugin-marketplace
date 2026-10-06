@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "chronulus-agents": {
+      "type": "http",
+      "url": "https://mcp.chronulus.com/mcp"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "chronulus-plugins",
+  "description": "Official marketplace of Claude Code plugins and skills for the Chronulus AI forecasting and prediction platform",
+  "owner": {
+    "name": "Chronulus AI",
+    "email": "customer-services@chronulus.com"
+  },
+  "plugins": [
+    {
+      "name": "chronulus",
+      "description": "Best practices for using the Chronulus MCP server: binary outcome and multi-outcome prediction with BinaryPredictor and time-series forecasts with the NormalizedForecaster.",
+      "author": {
+        "name": "Chronulus AI",
+        "email": "customer-services@chronulus.com"
+      },
+      "category": "productivity",
+      "source": "./plugins/chronulus",
+      "homepage": "https://github.com/ChronulusAI/plugin-marketplace/tree/main/plugins/chronulus"
+    }
+  ]
+}
