@@ -2,9 +2,13 @@
 
 The official [Claude Code plugin marketplace](https://docs.claude.com/en/docs/claude-code/plugin-marketplaces)
 for [Chronulus AI](https://chronulus.com) — Claude Code plugins and skills for
-building with the Chronulus forecasting and prediction platform.
+building with the Chronulus forecasting and prediction platform. It also works as an
+[OpenAI Codex plugin marketplace](https://developers.openai.com/codex/plugins/build), so
+the same plugins install in Codex.
 
 ## Installation
+
+### Claude Code
 
 Add this marketplace in Claude Code, then install whichever plugins you want:
 
@@ -18,6 +22,15 @@ Or browse and install interactively:
 ```
 /plugin marketplace add ChronulusAI/plugin-marketplace
 /plugin
+```
+
+### OpenAI Codex
+
+Add this marketplace from your terminal, then install `chronulus` from the Plugins
+directory in Codex:
+
+```
+codex plugin marketplace add ChronulusAI/plugin-marketplace
 ```
 
 ## Available plugins
@@ -35,11 +48,17 @@ enough to wire it up, and you'll be prompted to sign in via OAuth on first use.
 ```
 plugin-marketplace/
 ├── .claude-plugin/
-│   └── marketplace.json      # Marketplace manifest listing every plugin below
+│   └── marketplace.json      # Claude Code marketplace manifest listing every plugin below
+├── .agents/
+│   └── plugins/
+│       └── marketplace.json  # Codex marketplace manifest listing every plugin below
 └── plugins/
     └── <plugin-name>/
         ├── .claude-plugin/
-        │   └── plugin.json   # Plugin manifest
+        │   └── plugin.json   # Claude Code plugin manifest
+        ├── plugin.json        # Codex plugin manifest
+        ├── .mcp.json          # MCP servers for Claude Code (optional)
+        ├── mcp.json           # MCP servers for Codex (optional)
         ├── skills/            # Agent skills (optional)
         ├── commands/          # Slash commands (optional)
         ├── agents/            # Subagents (optional)
@@ -47,16 +66,18 @@ plugin-marketplace/
 ```
 
 Each plugin is self-contained and independently installable. New Chronulus plugins and
-skills are added under `plugins/` and registered in `.claude-plugin/marketplace.json`.
+skills are added under `plugins/` and registered in both `.claude-plugin/marketplace.json`
+and `.agents/plugins/marketplace.json`.
 
 ## Contributing
 
 To add a new plugin:
 
-1. Create `plugins/<plugin-name>/` with a `.claude-plugin/plugin.json` manifest and
-   whatever components it needs (`skills/`, `commands/`, `agents/`, `hooks/`,
-   `.mcp.json`).
-2. Add an entry for it to the `plugins` array in `.claude-plugin/marketplace.json`.
+1. Create `plugins/<plugin-name>/` with a `.claude-plugin/plugin.json` manifest (and a
+   `plugin.json` for Codex) and whatever components it needs (`skills/`, `commands/`,
+   `agents/`, `hooks/`, `.mcp.json` / `mcp.json`).
+2. Add an entry for it to the `plugins` array in both `.claude-plugin/marketplace.json`
+   and `.agents/plugins/marketplace.json`.
 3. Give it its own `README.md` documenting what it does and any prerequisites.
 
 ## License

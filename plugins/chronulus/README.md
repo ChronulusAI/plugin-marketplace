@@ -1,6 +1,6 @@
 # chronulus
 
-Claude Code / Claude.ai skills that teach Claude how to use the Chronulus MCP server. This plugin includes two skills: `predict` and `forecast`.
+Claude Code / Claude.ai / OpenAI Codex skills that teach your agent how to use the Chronulus MCP server. This plugin includes two skills: `predict` and `forecast`.
 
 ## `predict`
 
@@ -84,6 +84,8 @@ from it is used.
 
 ## Installation
 
+### Claude Code
+
 Install via this marketplace:
 
 ```
@@ -93,3 +95,11 @@ Install via this marketplace:
 
 Run `/mcp` afterward to confirm the Chronulus server connected and to complete
 sign-in.
+
+### OpenAI Codex
+
+Add the marketplace, then install `chronulus` from the Plugins directory in Codex:
+
+```
+codex plugin marketplace add ChronulusAI/plugin-marketplace
+```

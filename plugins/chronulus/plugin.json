@@ -1,0 +1,34 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "chronulus",
+  "version": "0.2.5",
+  "description": "Teaches your agent to use the Chronulus MCP server (https://mcp.chronulus.com/mcp): binary outcome and multi-outcome prediction with BinaryPredictor and time-series forecasts with the NormalizedForecaster.",
+  "author": {
+    "name": "Chronulus AI",
+    "email": "customer-services@chronulus.com"
+  },
+  "homepage": "https://github.com/ChronulusAI/plugin-marketplace/tree/main/plugins/chronulus",
+  "repository": "https://github.com/ChronulusAI/plugin-marketplace",
+  "license": "MIT",
+  "keywords": ["chronulus", "sports", "elections", "kalshi", "polymarket", "prediction markets", "forecasting", "prediction", "forecast", "time-series", "demand forecasting"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Chronulus",
+        "shortDescription": "Calibrated predictions and time-series forecasts from Chronulus AI",
+        "longDescription": "Best practices for the Chronulus MCP server: calibrated probability estimates for binary and multi-outcome questions with BinaryPredictor, and time-series forecasts with the NormalizedForecaster.",
+        "developerName": "Chronulus AI",
+        "category": "Productivity",
+        "websiteURL": "https://www.chronulus.com",
+        "privacyPolicyURL": "https://www.chronulus.com/privacy",
+        "termsOfServiceURL": "https://www.chronulus.com/terms-of-service",
+        "defaultPrompt": [
+          "Use Chronulus to estimate the probability that a prediction market question resolves Yes.",
+          "Use Chronulus to forecast weekly demand for the next 12 weeks."
+        ],
+        "composerIcon": "./icon.png",
+        "logo": "./icon.png"
+      }
+    }
+  }
+}
