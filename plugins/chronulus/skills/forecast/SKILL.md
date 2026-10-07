@@ -63,8 +63,9 @@ higher share), and that is what you map to `y_max` later.
 
 ## Step 2 — Design the input_data_model once
 
-`input_data_model` is a list of fields (`name`, `description`, `type` of `'str'` or
-`'List[str]'`). Pick the characteristics that actually drive the quantity — brand,
+`input_data_model` is a list of fields (`name`, `description`, `type` of `'str'`). Every
+value is a single string, so join several items (for example a list of events) into one
+string. Pick the characteristics that actually drive the quantity — brand,
 price, location, category, promotions, seasonality notes, known events — and describe
 each field in one sentence so the agent knows how to use it. There is no image or PDF
 field type: if the user gives you a file, extract or summarize the relevant content
@@ -161,6 +162,26 @@ so `y_hat = 0` is `y_min` and `y_hat = 1` is `y_max`.
   — don't round, drop, or re-derive values — and say which scale the values are on.
 - Saving to CSV/TXT with `save_forecast` exists only in the local stdio server, not the
   hosted one.
+
+## When a call fails
+
+A failed call is reported as an error (the tool result has `isError` set), with a message, a `next_step`, and these fields: `code`, `request_id`, `charged` / `charged_usd`, `retryable`, `retry_after_action`, and `partial`. Read them before you do anything else. Amounts are in USD.
+
+| `code` | What it means | What to do |
+|---|---|---|
+| `INSUFFICIENT_FUNDS` | The account's wallet balance is too low; nothing ran and nothing was charged. | **Stop.** Tell the user to add funds at https://console.chronulus.com/billing (quote `estimated_cost_usd` and `balance_usd` if present). Do not retry, change the inputs, or create a new session or agent before they confirm funds were added. |
+| `NO_ACTIVE_SUBSCRIPTION`, `USAGE_LIMIT_EXCEEDED` | The account can't run requests right now. | Stop and tell the user; resubmit only after they fix the account. |
+| `REQUEST_TOO_LARGE` | The inputs (or horizon) are too big. | Reduce the size and resubmit. Retrying unchanged fails again. |
+| `RATE_LIMITED` | Too many requests. | Wait, then resubmit. |
+| `GENERATION_FAILED`, `RESPONSE_CONVERSION_FAILED`, `INTERNAL_ERROR`, `UNEXPECTED_ERROR` | The service failed while running the request. | Resubmit once. If it fails again, give the user the `request_id`. |
+| `EMPTY_RESULT` | The request finished with no results, usually because it was rejected before it ran. | Treat it as a failure, not a result. Ask the user to check their balance. |
+| `INVALID_INPUT` | A value doesn't match the type declared for its field. Nothing ran and nothing was charged. | Read `fields` (each entry names the field, its declared type and what was passed), correct those values, then resubmit. Retrying unchanged fails again. |
+| `REQUEST_NOT_QUEUED` | The request was not queued, so nothing ran. | Read the message, fix the cause, then resubmit. |
+
+- Use `retryable` and `charged` to decide, not guesswork: `retryable: false` means do not resubmit as-is, and `retryable: null` means unknown, so read the message first.
+- Always quote the `request_id` when you tell the user a request failed.
+
+**Never present a result with no forecast values as a forecast.** If a call returns without any forecast values, treat it as a failed call, not a result, and ask the user to check their account balance before retrying.
 
 ## Interpreting the result
 
