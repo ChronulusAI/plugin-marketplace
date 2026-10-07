@@ -3,7 +3,7 @@
 The official [Claude Code plugin marketplace](https://docs.claude.com/en/docs/claude-code/plugin-marketplaces)
 for [Chronulus AI](https://chronulus.com) — Claude Code plugins and skills for
 building with the Chronulus forecasting and prediction platform. It also works as an
-[OpenAI Codex plugin marketplace](https://developers.openai.com/codex/plugins/build), so
+[OpenAI Codex plugin marketplace](https://developers.openai.com/plugins/build/plugins), so
 the same plugins install in Codex.
 
 ## Installation
@@ -26,11 +26,36 @@ Or browse and install interactively:
 
 ### OpenAI Codex
 
+Use a Codex CLI build that supports plugin marketplaces. Check your installation:
+
+```bash
+codex --version
+codex plugin marketplace --help
+```
+
+The marketplace command is supported by the locally checked `codex-cli 0.159.3`.
+If you get `unexpected argument 'marketplace'`, your executable does not expose
+this command. Update Codex using the package manager you installed it with (for an
+npm installation, `npm install -g @openai/codex@latest`), then check again. Use
+`type -a codex` to check whether another installation is taking precedence on PATH.
+
 Add this marketplace from your terminal, then install `chronulus` from the Plugins
 directory in Codex:
 
 ```
 codex plugin marketplace add ChronulusAI/plugin-marketplace
+```
+
+To test the Codex compatibility branch before it is merged:
+
+```bash
+codex plugin marketplace add ChronulusAI/plugin-marketplace --ref feat/openai-codex-plugin
+```
+
+Alternatively, register your current checkout from the repository root:
+
+```bash
+codex plugin marketplace add .
 ```
 
 ## Available plugins
