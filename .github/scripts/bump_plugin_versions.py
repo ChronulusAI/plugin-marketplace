@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
-"""Bumps the patch version in plugin.json for every plugin changed between two commits.
+"""Bumps the patch version of every plugin changed on this branch relative to a base ref.
 
-A plugin counts as changed when any file under plugins/<name>/ changed, other than that
-plugin's own manifests (so a bump commit never triggers another bump). The Claude manifest
+A plugin counts as changed when any file under plugins/<name>/ differs from the base
+(merge-base diff), other than that plugin's own manifests. The Claude manifest
 (.claude-plugin/plugin.json) is the source of truth for the version; the Codex manifest
 (plugin.json) is kept in sync with it.
 
+The bump is relative to the version on the base ref, and only happens when this branch's
+version is not already ahead of it. That makes the script idempotent (one bump per release
+candidate, however many pushes) and lets a release candidate that falls behind a newer
+release re-bump past it.
+
 Usage:
-    bump_plugin_versions.py <base_sha> <head_sha>
+    bump_plugin_versions.py <base_ref>
 
 Prints one "<plugin> <old> -> <new>" line per bumped plugin, and nothing if none changed.
 """
@@ -23,14 +28,11 @@ PLUGINS_DIR = "plugins"
 MANIFEST = ".claude-plugin/plugin.json"
 CODEX_MANIFEST = "plugin.json"
 SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
-ZERO_SHA = "0" * 40
 
 
-def changed_files(base: str, head: str) -> list[str]:
-    if base == ZERO_SHA:
-        base = f"{head}~1"
+def changed_files(base: str) -> list[str]:
     out = subprocess.run(
-        ["git", "diff", "--name-only", base, head],
+        ["git", "diff", "--name-only", f"{base}...HEAD"],
         check=True, capture_output=True, text=True,
     ).stdout
     return [line for line in out.splitlines() if line]
@@ -56,23 +58,42 @@ def bump_patch(version: str) -> str:
     return f"{major}.{minor}.{patch + 1}"
 
 
-def main(base: str, head: str) -> None:
-    for name in changed_plugins(changed_files(base, head)):
+def parse(version: str) -> tuple[int, int, int]:
+    m = SEMVER.match(version)
+    if not m:
+        raise ValueError(f"version {version!r} is not MAJOR.MINOR.PATCH")
+    return tuple(map(int, m.groups()))
+
+
+def base_version(base: str, path: Path) -> str | None:
+    """The plugin's version on the base ref, or None if the plugin is new there."""
+    res = subprocess.run(
+        ["git", "show", f"{base}:{path.as_posix()}"], capture_output=True, text=True,
+    )
+    return json.loads(res.stdout)["version"] if res.returncode == 0 else None
+
+
+def main(base: str) -> None:
+    for name in changed_plugins(changed_files(base)):
         path = Path(PLUGINS_DIR) / name / MANIFEST
         if not path.exists():
             continue  # a directory under plugins/ that isn't a plugin (or was deleted)
-        data = json.loads(path.read_text())
-        old = data["version"]
-        new = bump_patch(old)
+        released = base_version(base, path)
+        if released is None:
+            continue  # a new plugin: it ships at whatever version it declares
+        current = json.loads(path.read_text())["version"]
+        if parse(current) > parse(released):
+            continue  # already bumped for this release
+        new = bump_patch(released)
         # Rewrite just the version string so the rest of the file's formatting is untouched.
         for manifest in (path, path.parent.parent / CODEX_MANIFEST):
             if manifest.exists():
                 text = manifest.read_text()
                 manifest.write_text(re.sub(r'("version"\s*:\s*")[^"]*(")', rf"\g<1>{new}\g<2>", text, count=1))
-        print(f"{name} {old} -> {new}")
+        print(f"{name} {current} -> {new}")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 2:
         sys.exit(__doc__)
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1])

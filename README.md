@@ -78,14 +78,7 @@ and `.agents/plugins/marketplace.json`.
 
 ## Contributing
 
-To add a new plugin:
-
-1. Create `plugins/<plugin-name>/` with a `.claude-plugin/plugin.json` manifest (and a
-   `plugin.json` for Codex) and whatever components it needs (`skills/`, `commands/`,
-   `agents/`, `hooks/`, `.mcp.json` / `mcp.json`).
-2. Add an entry for it to the `plugins` array in both `.claude-plugin/marketplace.json`
-   and `.agents/plugins/marketplace.json`.
-3. Give it its own `README.md` documenting what it does and any prerequisites.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add a plugin and how releases work.
 
 ## License
 
