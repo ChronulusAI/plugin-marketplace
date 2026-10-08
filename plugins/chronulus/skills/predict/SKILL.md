@@ -126,7 +126,8 @@ overload one session with multiple bet types.
 ## Step 2 — Design the input_data_model once
 
 `input_data_model` is a list of `SimpleInputField` objects (`name`, `description`,
-`type`: `'str'` or `'List[str]'`). There is currently no image/PDF field type on this
+`type`: `'str'`). Every value is a single string, so join several items into one string.
+There is currently no image/PDF field type on this
 tool — if a user hands you a screenshot, box score image, or PDF, **extract or
 summarize its relevant content to text yourself** and pass that text as a string field.
 Total input size across all fields is capped at 10MB, so summarize rather than paste
@@ -393,6 +394,29 @@ Four habits make these questions work:
    ladder gets reconciled with the Dirichlet tools. A set of independent yes/no
    questions (several words in a speech, several thresholds that can all hold) does
    *not* — each is its own dual-framed binary, and they need not sum to 1.
+
+## When a call fails
+
+A failed call is reported as an error (the tool result has `isError` set), with a message, a `next_step`, and these fields: `code`, `request_id`, `charged` / `charged_usd`, `retryable`, `retry_after_action`, and `partial`. Read them before you do anything else. Amounts are in USD.
+
+| `code` | What it means | What to do |
+|---|---|---|
+| `INSUFFICIENT_FUNDS` | The account's wallet balance is too low; nothing ran and nothing was charged. | **Stop.** Tell the user to add funds at https://console.chronulus.com/billing (quote `estimated_cost_usd` and `balance_usd` if present). Do not retry, change the inputs, or create a new session or agent before they confirm funds were added. |
+| `NO_ACTIVE_SUBSCRIPTION`, `USAGE_LIMIT_EXCEEDED` | The account can't run requests right now. | Stop and tell the user; resubmit only after they fix the account. |
+| `REQUEST_TOO_LARGE` | The inputs (or horizon) are too big. | Reduce the size and resubmit. Retrying unchanged fails again. |
+| `RATE_LIMITED` | Too many requests. | Wait, then resubmit. |
+| `GENERATION_FAILED`, `RESPONSE_CONVERSION_FAILED`, `INTERNAL_ERROR`, `UNEXPECTED_ERROR` | The service failed while running the request. | Resubmit once. If it fails again, give the user the `request_id`. |
+| `EMPTY_RESULT` | The request finished with no results, usually because it was rejected before it ran. | Treat it as a failure, not a result. Ask the user to check their balance. |
+| `INVALID_INPUT` | A value doesn't match the type declared for its field. Nothing ran and nothing was charged. | Read `fields` (each entry names the field, its declared type and what was passed), correct those values, then resubmit. Retrying unchanged fails again. |
+| `REQUEST_NOT_QUEUED` | The request was not queued, so nothing ran. | Read the message, fix the cause, then resubmit. |
+
+- Use `retryable` and `charged` to decide, not guesswork: `retryable: false` means do not resubmit as-is, and `retryable: null` means unknown, so read the message first.
+- If `partial` is true, some experts finished and were already charged. Do not resubmit the whole request (that charges them again); use the completed results or run a new request for the missing part.
+- Always quote the `request_id` when you tell the user a request failed.
+- In a batch, check every item for an `"error"` key; a failed item carries the same `code`, `request_id`, `charged` and `retryable` fields. One item failing for `INSUFFICIENT_FUNDS` means the rest will too, so stop submitting more.
+- When you run both framings of a dual-framing pair, don't average or debias a pair where either call failed.
+
+**Never present a result with no expert opinions as a prediction.** If a call returns without any expert opinions, treat it as a failed call, not a result, and ask the user to check their account balance before retrying.
 
 ## Interpreting the result
 
