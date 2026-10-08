@@ -27,11 +27,11 @@ Or browse and install interactively:
 
 ### OpenAI Codex
 
-Use a Codex CLI build that supports plugin marketplaces. Check your installation:
+Add this marketplace from your terminal, then install `ChronulusAI/plugin-marketplace` from the Plugins
+directory in Codex:
 
-```bash
-codex --version
-codex plugin marketplace --help
+```
+codex plugin marketplace add ChronulusAI/plugin-marketplace
 ```
 
 If you get `unexpected argument 'marketplace'`, your executable does not expose
@@ -39,12 +39,6 @@ this command. Update Codex using the package manager you installed it with (for 
 npm installation, `npm install -g @openai/codex@latest`), then check again. Use
 `type -a codex` to check whether another installation is taking precedence on PATH.
 
-Add this marketplace from your terminal, then install `chronulus` from the Plugins
-directory in Codex:
-
-```
-codex plugin marketplace add ChronulusAI/plugin-marketplace
-```
 
 ## Available plugins
 
