@@ -2,7 +2,9 @@
 """Bumps the patch version in plugin.json for every plugin changed between two commits.
 
 A plugin counts as changed when any file under plugins/<name>/ changed, other than that
-plugin's own .claude-plugin/plugin.json (so a bump commit never triggers another bump).
+plugin's own manifests (so a bump commit never triggers another bump). The Claude manifest
+(.claude-plugin/plugin.json) is the source of truth for the version; the Codex manifest
+(plugin.json) is kept in sync with it.
 
 Usage:
     bump_plugin_versions.py <base_sha> <head_sha>
@@ -19,6 +21,7 @@ from pathlib import Path
 
 PLUGINS_DIR = "plugins"
 MANIFEST = ".claude-plugin/plugin.json"
+CODEX_MANIFEST = "plugin.json"
 SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 ZERO_SHA = "0" * 40
 
@@ -39,7 +42,7 @@ def changed_plugins(files: list[str]) -> list[str]:
         parts = f.split("/")
         if len(parts) < 3 or parts[0] != PLUGINS_DIR:
             continue
-        if "/".join(parts[2:]) == MANIFEST:
+        if "/".join(parts[2:]) in (MANIFEST, CODEX_MANIFEST):
             continue
         names.add(parts[1])
     return sorted(names)
@@ -58,12 +61,14 @@ def main(base: str, head: str) -> None:
         path = Path(PLUGINS_DIR) / name / MANIFEST
         if not path.exists():
             continue  # a directory under plugins/ that isn't a plugin (or was deleted)
-        text = path.read_text()
-        data = json.loads(text)
+        data = json.loads(path.read_text())
         old = data["version"]
         new = bump_patch(old)
         # Rewrite just the version string so the rest of the file's formatting is untouched.
-        path.write_text(re.sub(r'("version"\s*:\s*")[^"]*(")', rf"\g<1>{new}\g<2>", text, count=1))
+        for manifest in (path, path.parent.parent / CODEX_MANIFEST):
+            if manifest.exists():
+                text = manifest.read_text()
+                manifest.write_text(re.sub(r'("version"\s*:\s*")[^"]*(")', rf"\g<1>{new}\g<2>", text, count=1))
         print(f"{name} {old} -> {new}")
 
 

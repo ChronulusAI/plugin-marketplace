@@ -1,7 +1,7 @@
 name: Bump Plugin Version
 
 # Bumps the patch version of every plugin touched by a push to main, so installed copies
-# of a plugin pick up each change. The bump commit only edits plugin.json, which the script
+# of a plugin pick up each change. The bump commit only edits the plugin manifests, which the script
 # ignores (and GITHUB_TOKEN pushes don't trigger workflows), so this can't loop.
 on:
   push:
@@ -38,7 +38,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add plugins/*/.claude-plugin/plugin.json
+          git add plugins/*/.claude-plugin/plugin.json plugins/*/plugin.json
           git commit -m "Bump version"
           git pull --rebase origin main
           git push origin HEAD:main
