@@ -99,7 +99,19 @@ create_forecasting_agent_and_get_forecast(
 ```
 
 Choose `time_scale` and `horizon_len` from what the user asked for ("next quarter, by
-week" → `weeks`, 13). Keep the horizon as short as the decision needs. The result has
+week" → `weeks`, 13). Keep the horizon as short as the decision needs.
+
+**Longest horizon per `time_scale`:**
+
+| `time_scale` | Longest `horizon_len` | Covers |
+|---|---|---|
+| `hours` | 168 | 1 week |
+| `days` | 365 | 1 year |
+| `weeks` | 260 | 5 years |
+
+A longer request is rejected before anything runs and nothing is charged, so stay within
+these limits. For a longer span, use a coarser `time_scale` (for example `weeks` for a
+multi-year view) or split it into several forecasts. The result has
 `agent_id`, `prediction_id`, `data` (one row per period, `y_hat` between 0 and 1) and
 `explanation`. **Save `agent_id` and `prediction_id`.**
 
@@ -171,7 +183,7 @@ A failed call is reported as an error (the tool result has `isError` set), with 
 |---|---|---|
 | `INSUFFICIENT_FUNDS` | The account's wallet balance is too low; nothing ran and nothing was charged. | **Stop.** Tell the user to add funds at https://console.chronulus.com/billing (quote `estimated_cost_usd` and `balance_usd` if present). Do not retry, change the inputs, or create a new session or agent before they confirm funds were added. |
 | `NO_ACTIVE_SUBSCRIPTION`, `USAGE_LIMIT_EXCEEDED` | The account can't run requests right now. | Stop and tell the user; resubmit only after they fix the account. |
-| `REQUEST_TOO_LARGE` | The inputs (or horizon) are too big. | Reduce the size and resubmit. Retrying unchanged fails again. |
+| `REQUEST_TOO_LARGE` | The inputs or the forecast horizon are too big. For a horizon over the limit, the message names the limit and the value requested (`time_scale`, `limit`, `received`). Nothing ran and nothing was charged. | For a horizon, shorten it to the limit, switch to a coarser `time_scale`, or split it into several forecasts. For oversized inputs, reduce their size. Retrying unchanged fails again. |
 | `RATE_LIMITED` | Too many requests. | Wait, then resubmit. |
 | `GENERATION_FAILED`, `RESPONSE_CONVERSION_FAILED`, `INTERNAL_ERROR`, `UNEXPECTED_ERROR` | The service failed while running the request. | Resubmit once. If it fails again, give the user the `request_id`. |
 | `EMPTY_RESULT` | The request finished with no results, usually because it was rejected before it ran. | Treat it as a failure, not a result. Ask the user to check their balance. |
