@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "chronulus-plugins",
-  "description": "Official marketplace of Claude Code plugins and skills for the Chronulus AI forecasting and prediction platform",
+  "description": "Official marketplace of plugins and skills for the Chronulus AI forecasting and prediction platform, for Claude Code and OpenAI Codex",
   "owner": {
     "name": "Chronulus AI",
     "email": "customer-services@chronulus.com"

@@ -1,6 +1,9 @@
 # chronulus
 
-Claude Code / Claude.ai / OpenAI Codex skills that teach your agent how to use the Chronulus MCP server. This plugin includes two skills: `predict` and `forecast`.
+Skills for Claude Code, Claude.ai and OpenAI Codex that teach your agent how to use the Chronulus MCP server. This plugin includes two skills: `predict` and `forecast`.
+
+The plugin also works on Claude.ai and ChatGPT.com, and the MCP server includes UIs built
+specifically for those platforms (such as the prediction and forecast scorecards).
 
 ## `predict`
 
