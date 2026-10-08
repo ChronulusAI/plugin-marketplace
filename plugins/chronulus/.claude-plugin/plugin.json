@@ -1,7 +1,7 @@
 {
   "name": "chronulus",
   "displayName": "Chronulus",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Teaches Claude to use the Chronulus MCP server (https://mcp.chronulus.com/mcp): binary outcome and multi-outcome prediction with BinaryPredictor and time-series forecasts with the NormalizedForecaster.",
   "author": {
     "name": "Chronulus AI",

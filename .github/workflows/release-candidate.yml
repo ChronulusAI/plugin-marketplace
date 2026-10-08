@@ -1,0 +1,64 @@
+name: Release Candidate
+
+# Changes reach main through release-candidate branches named rc/<name>. Feature PRs target
+# an rc/ branch; one rc/ -> main squash-merge ships them. Pushes to main need a pull request,
+# so the version bump lands on the rc/ branch instead, before the squash.
+#
+# The bump runs on every push to an rc/ branch and again when its PR to main is opened or
+# updated (so a release candidate that fell behind a newer release re-bumps past it). The
+# script is idempotent, and GITHUB_TOKEN pushes don't trigger workflows, so this can't loop.
+# Keep the rc/ branch up to date with main (merge main into it) before releasing.
+on:
+  push:
+    branches: [ 'rc/**' ]
+    paths:
+      - 'plugins/**'
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  guard:
+    # Fails any PR into main that doesn't come from an rc/ branch.
+    if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'rc/')
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Pull requests into main must come from an rc/ branch (got '${{ github.head_ref }}')." >&2
+          exit 1
+
+  bump:
+    if: >-
+      github.event_name == 'push' ||
+      (startsWith(github.head_ref, 'rc/') && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    # One bump per branch at a time, queued in order, so quick pushes can't race.
+    concurrency:
+      group: release-candidate-${{ github.head_ref || github.ref_name }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Bump changed plugins
+        id: bump
+        run: |
+          python3 .github/scripts/bump_plugin_versions.py origin/main | tee bumped.txt
+          if [ -s bumped.txt ]; then echo "changed=true" >> "$GITHUB_OUTPUT"; fi
+          rm bumped.txt
+
+      - name: Commit and push
+        if: steps.bump.outputs.changed == 'true'
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add plugins/*/.claude-plugin/plugin.json plugins/*/plugin.json
+          git commit -m "Bump version"
+          git pull --rebase origin "$BRANCH"
+          git push origin "HEAD:$BRANCH"
