@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "chronulus",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Teaches your agent to use the Chronulus MCP server (https://mcp.chronulus.com/mcp): binary outcome and multi-outcome prediction with BinaryPredictor and time-series forecasts with the NormalizedForecaster.",
   "author": {
     "name": "Chronulus AI",
