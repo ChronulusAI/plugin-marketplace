@@ -202,8 +202,9 @@ create_prediction_agent_and_get_predictions(
 )
 ```
 
-This returns `agent_id`, `beta_params` (`alpha`, `beta`), `expert_opinions`, and
-`probability`. Save `agent_id`.
+This returns `agent_id`, `request_id`, `beta_params` (`alpha`, `beta`), `expert_opinions`,
+`probability`, and `billing` (what the call cost; see Cost and balance below). Save
+`agent_id`.
 
 Every later matchup (and every later framing — see below):
 
@@ -323,7 +324,8 @@ results = batch_reuse_prediction_agents_and_get_predictions(items={
 
 orig, rev = results["lal_vs_bos:orig"], results["lal_vs_bos:rev"]
 # each success has the same fields as reuse_prediction_agent_and_get_prediction:
-#   agent_id, request_id, beta_params, expert_opinions, probability
+#   agent_id, request_id, beta_params, expert_opinions, probability, billing
+# and results["billing"] is the total cost of the whole batch
 ```
 
 The result for each key is exactly what a single call would have returned, so everything
@@ -342,8 +344,9 @@ Rules to know before you batch:
   failed item comes back as `{"error": "..."}` in place of its result, while the rest still
   complete. Look for the `"error"` key on each result, fix and re-run just the failed items,
   and never average a framing pair if either half failed.
-- **Never use `"error"` as an `item_key`.** A top-level `"error"` key in the response means
-  the whole batch was rejected (over the expert cap, empty, or a reserved key).
+- **Never use `"error"` or `"billing"` as an `item_key`.** A top-level `"error"` key in the
+  response means the whole batch was rejected (over the expert cap, empty, or a reserved
+  key), and a top-level `"billing"` key is the total cost of the batch.
 - **`agent_id`s must be real.** Use the `agent_id` returned by
   `create_prediction_agent_and_get_predictions`; do not invent one. Each item's `input_data`
   must follow *that item's* agent's `input_data_model`.
@@ -417,6 +420,38 @@ A failed call is reported as an error (the tool result has `isError` set), with 
 - When you run both framings of a dual-framing pair, don't average or debias a pair where either call failed.
 
 **Never present a result with no expert opinions as a prediction.** If a call returns without any expert opinions, treat it as a failed call, not a result, and ask the user to check their account balance before retrying.
+
+## Cost and balance
+
+Every successful prediction result has a `billing` object next to `request_id`. It is a
+record of what the call cost for the user, not something to draw.
+
+```
+pred["billing"]
+# {"request_id": "...", "cost_usd": "0.063102", "charged_count": 2, "total_count": 2,
+#  "estimated": false}
+```
+
+- **Report `cost_usd` exactly as given.** It is in USD with six decimals and is what was
+  actually charged, across all of the call's experts. State it in your own text (or in a
+  table the user asked for); the scorecards do not show it, so don't try to add it to one.
+- **`charged_count` of `total_count`** counts predictions (one per expert), so a request that
+  is only partly complete shows fewer charged than requested.
+- **`estimated: true`** means the request is still running, so `cost_usd` is not final.
+  `estimated_cost_usd` is then an estimate for the whole request, not a limit: the final
+  cost can come out higher, so say so rather than quoting it as a promise.
+- **Never estimate or invent a cost.** Don't derive one from the number of experts or from
+  token counts, and don't guess the cost of a dual-framed pair. If `billing`
+  is missing, tell the user the cost isn't available for that call.
+- **A batch has its own total.** `results["billing"]` is the exact sum for the whole batch
+  (with `request_count`, the number of calls it covers); each successful item also has its
+  own `billing`. For a dual-framed matchup, report the cost of the pair as the sum of the
+  two framings (the batch total, if they were one batch).
+- **The balance is not in `billing`**, because it changes with every request. When the
+  user asks what is left, or before a large batch, call `get_chronulus_balance()`: it
+  returns `balance_usd` (available now), `reserved_usd` (held for requests still running),
+  and the auto-reload settings (`auto_reload_enabled`, `auto_reload_threshold_usd`, and
+  `auto_reload_amount_usd`, the amount added each time a reload happens).
 
 ## Interpreting the result
 

@@ -172,8 +172,6 @@ so `y_hat = 0` is `y_min` and `y_hat = 1` is `y_max`.
   from `rescale_forecast` (same `y_min`, `y_max`, `invert_scale`) so the CSV matches the plot;
   otherwise use the forecast result's `data`, which is on the 0–1 scale. Copy every row exactly
   — don't round, drop, or re-derive values — and say which scale the values are on.
-- Saving to CSV/TXT with `save_forecast` exists only in the local stdio server, not the
-  hosted one.
 
 ## When a call fails
 
@@ -204,6 +202,37 @@ A failed call is reported as an error (the tool result has `isError` set), with 
 - If the user asks about uncertainty, be honest that the output is a single central
   path with an explanation, not a prediction interval. Don't invent bands.
 
+## Cost and balance
+
+Every successful forecast result has a `billing` object, and the forecast tools also return
+the `request_id` of the call. It is a record of what the call cost for the user, not
+something to draw.
+
+```
+first["billing"]
+# {"request_id": "...", "cost_usd": "0.056912", "charged_count": 1, "total_count": 1,
+#  "estimated": false}
+```
+
+- **Report `cost_usd` exactly as given.** It is in USD with six decimals and is what was
+  actually charged. State it in your own text (or in a table the user asked for); the
+  scorecard does not show it, so don't try to add it to a chart.
+- **`charged_count` of `total_count`** says how many of the call's predictions have been
+  charged, which matters if a call is partly complete.
+- **`estimated: true`** means the request is still running, so `cost_usd` is not final.
+  `estimated_cost_usd` is then an estimate for the whole request, not a limit: the final
+  cost can come out higher, so say so rather than quoting it as a promise.
+- **Never estimate or invent a cost.** Don't derive one from the horizon, the number of
+  items, or token counts. If `billing` is missing, tell the user the cost isn't available
+  for that call.
+- **Keep a running total across several forecasts** by adding the `cost_usd` values, and
+  say it is a total of the calls you made.
+- **The balance is not in `billing`**, because it changes with every request. When the
+  user asks what is left, call `get_chronulus_balance()`: it returns `balance_usd`
+  (available now), `reserved_usd` (held for requests still running), and the auto-reload
+  settings (`auto_reload_enabled`, `auto_reload_threshold_usd`, and `auto_reload_amount_usd`,
+  the amount added each time a reload happens).
+
 ## Optional: the risk assessment scorecard
 
 `get_risk_assessment_scorecard(session_id, as_json)` returns a responsible-forecasting
@@ -220,6 +249,7 @@ first = create_forecasting_agent_and_get_forecast(
     session_id, input_data_model, input_data,
     forecast_start_dt_str="YYYY-MM-DD HH:MM:SS", time_scale="days", horizon_len=60)
 agent_id, prediction_id = first["agent_id"], first["prediction_id"]
+cost = first["billing"]["cost_usd"]        # what this call cost; report it as given
 
 # next item, same data model
 nxt = reuse_forecasting_agent_and_get_forecast(
