@@ -67,7 +67,7 @@ It assumes the Chronulus MCP server is connected. The tools referenced below
 `reuse_prediction_agent_and_get_prediction`,
 `batch_reuse_prediction_agents_and_get_predictions`, `render_prediction_scorecard`,
 `render_debiased_prediction_scorecard`, `get_risk_assessment_scorecard`,
-`debias_beta_params`, `reconcile_ordinal_outcome_dirichlet`,
+`debias_beta_params`, `summarize_betas`, `reconcile_ordinal_outcome_dirichlet`,
 `reconcile_exclusive_outcome_dirichlet`, `render_ordinal_dirichlet_scorecard`,
 `render_exclusive_dirichlet_scorecard`) come from that server.
 
@@ -83,7 +83,7 @@ reuse them for every later one:
 | 1. Create the session | `create_chronulus_session` | Once, ever, per **(category/subcategory, bet type)** pair — e.g. once for "NBA moneyline", a separate one for "NBA spread cover", another for "US CPI release thresholds" |
 | 2. Create the agent + get the first prediction | `create_prediction_agent_and_get_predictions` | Once, on the very first matchup — this is also where `input_data_model` (your field schema) gets fixed |
 | 3. Get every later prediction | `reuse_prediction_agent_and_get_prediction` | Every subsequent matchup, and every subsequent *framing* (see Dual-Framing below) — pass the same `agent_id`, new `input_data` |
-| 3b. Get many predictions at once | `batch_reuse_prediction_agents_and_get_predictions` | Whenever you need two or more predictions (both framings of a matchup, a slate of games, every outcome of a multi-outcome market) — same agents, run concurrently in one call (see Batching below) |
+| 3b. Get many predictions at once | `batch_reuse_prediction_agents_and_get_predictions` | Whenever you need more than one prediction (both framings of a matchup, a slate of games, every outcome of a multi-outcome market) — same agents, run concurrently in one call (see Batching below). One item is fine too |
 
 Only start a **new** session + agent when:
 - You're predicting a genuinely different bet type (moneyline vs. spread-cover vs.
@@ -286,12 +286,27 @@ debias_beta_params(items={
         "original_alpha": pred_orig["beta_params"]["alpha"], "original_beta": pred_orig["beta_params"]["beta"],
         "reversed_alpha": pred_rev["beta_params"]["alpha"],  "reversed_beta": pred_rev["beta_params"]["beta"],
     },
-})   # -> {"game1": {"alpha": alpha_star, "beta": beta_star, "probability": prob_A}}
+})   # -> {"game1": {"alpha": alpha_star, "beta": beta_star, "probability": prob_A,
+      #               "descriptives": {"mean": ..., "median": ..., "mode": ..., "ci_50": {"lower": ..., "upper": ...}, ...}}}
 ```
 
-`items` is `{label: pair}` and the result is keyed by the same labels. It takes any number of
-pairs, so put every pair you need — a whole slate of games, or every outcome of a
-multi-outcome market — in **one call**.
+`items` is `{label: pair}` and the result is keyed by the same labels. It takes **one or
+more** pairs — a single pair is a normal call, so never invent a placeholder pair — and
+every pair you need, such as a whole slate of games or every outcome of a multi-outcome
+market, belongs in **one call**.
+
+Each result also carries `descriptives` of the debiased Beta, so you do not have to work
+out the median or an interval yourself. By default you get `mean`, `median`, `mode` and the
+50%, 75%, 90% and 95% intervals (`ci_50`, `ci_75`, `ci_90`, `ci_95`, each `{lower, upper}`),
+the same levels the scorecards show. To choose others, pass `descriptives`: a list of
+`"mean"`, `"median"`, `"mode"` and any number of `"ci_dd"` where `dd` is an integer from 01
+to 99, the confidence level in percent (e.g. `descriptives=["median", "ci_80"]`). `mode` is
+`null` when alpha or beta is at most 1, because the distribution then has no interior peak.
+Pass `descriptives=[]` for just `alpha`, `beta` and `probability`.
+
+To get the same statistics for any other Beta distribution (for example one framing's
+`beta_params`, without debiasing), call `summarize_betas(items={label: {"alpha": ..., "beta": ...}})`.
+It takes one or more distributions and the same `descriptives` argument.
 
 It computes exactly the formula above, so the numbers match the card. Pass each call's
 `beta_params` exactly as returned: the reversed Beta is already an estimate from the
@@ -303,9 +318,10 @@ instead of Betas, so let the tool do the arithmetic.
 ## Batching: run many predictions in one call
 
 `reuse_prediction_agent_and_get_prediction` handles one prediction per call. Whenever you
-need **two or more** — both framings of a matchup, a whole slate of games, or every
+need **more than one** — both framings of a matchup, a whole slate of games, or every
 outcome of a multi-outcome market — use `batch_reuse_prediction_agents_and_get_predictions`
-instead. It queues everything up front, runs the predictions concurrently, waits for all
+instead. A batch may hold a **single item**: if you only need one prediction there is no
+minimum to meet, so never add a placeholder item (it would run, and be billed, for nothing). It queues everything up front, runs the predictions concurrently, waits for all
 of them, and returns one dict, so a batch takes about as long as its slowest prediction
 instead of the sum of all of them. It is the same operation as
 `reuse_prediction_agent_and_get_prediction`, just many at once.
@@ -335,7 +351,8 @@ downstream is unchanged — apply the same dual-framing averaging, or hand
 Rules to know before you batch:
 
 - **The batch is capped at 32 experts in total.** The `num_experts` of all items must add
-  up to at most 32, and each item needs at least 2. Budget before you build the batch:
+  up to at most 32, and each item needs at least 2 *experts* (a minimum per item, not a minimum
+  number of items). Budget before you build the batch:
   e.g. one dual-framed matchup at 5 experts is 10 experts, so three matchups (30) fit in one
   call but a fourth does not. A batch over the cap is rejected outright — nothing is queued.
   For bigger jobs, split them across several calls (keep both framings of a matchup, and all
