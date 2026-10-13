@@ -13,10 +13,13 @@ in `SKILL.md`; this file adds what is specific to these markets.
 | When will X happen (date buckets) | ordinal or exclusive over buckets | proposition/negation, one Beta per bucket |
 | Approval or poll number above a threshold on a date | binary on a threshold | proposition/negation |
 | Court ruling outcome | binary or exclusive (outcomes) | proposition/negation |
-| Who will hold a role (nominee, leader) | exclusive-winner | proposition/negation per candidate |
+| Who will hold a role (nominee, leader) | exclusive-winner | proposition/negation per candidate, each with their own evidence (see `elections/index.md`) |
 
-There is almost never a SUBJECT/OBJECT pair. Use proposition/negation and dual-frame by
-swapping them.
+Events like a bill passing, a ruling or a poll threshold have one body of evidence and no
+SUBJECT/OBJECT pair, so use proposition/negation and run **one** prediction (no order
+debiasing; see "Do you need order debiasing?" in `SKILL.md`). A question about **who**, with
+candidates who each have their own information set, is a case for order debiasing: follow
+`elections/index.md`.
 
 ## Session template
 

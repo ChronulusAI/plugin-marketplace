@@ -19,7 +19,7 @@ event: the agenda, the setting, the news cycle and the format.
 |---|---|---|
 | Will the speaker say a given word or phrase during the event | binary | proposition/negation |
 | Will the word appear at least N times | binary on a threshold | proposition/negation |
-| A set of words in the same event (a "mention bingo" card) | K independent binaries, not mutually exclusive | one dual-framed binary per word; do **not** reconcile into a Dirichlet |
+| A set of words in the same event (a "mention bingo" card) | K independent binaries, not mutually exclusive | one binary prediction per word; do **not** reconcile into a Dirichlet |
 | Which word is said first | exclusive-winner | proposition/negation per word |
 
 Note that several words in one event are **not** an exclusive set; each is its own

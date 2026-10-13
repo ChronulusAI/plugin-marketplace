@@ -142,6 +142,9 @@ render_forecast_scorecard(
     # optional — plot in real units instead of 0–1:
     y_min=0, y_max=4000, invert_scale=False,
     y_axis_label="Visitors per week",
+    # optional:
+    subtitle="Weekly visitors, rescaled into real units",
+    labels=[{"date": "2026-11-27", "label": "Black Friday"}],
 )
 ```
 
@@ -149,7 +152,18 @@ render_forecast_scorecard(
   do not need to call `rescale_forecast` first.
 - Always pass `invert_scale` as an explicit `true` or `false`; never leave it as a
   placeholder.
-- `y_axis_label` is a short label for the series ("Daily units sold").
+- `y_axis_label` is a short label for the series ("Daily units sold"). `subtitle` says what
+  was forecast in a few words, under the title; skip it when the title already says it.
+- **The plot has no labels by default.** Pass `labels` to mark up to **10** dates, each as
+  `{"date": ..., "label": ...}`. Keep each label **very short, a few words and at most 24
+  characters** ("Black Friday", "Launch"), and mark only the events that explain the shape of
+  the forecast (a holiday, a launch, a known outage), not every peak and dip: many labels
+  clutter the plot. The date must be inside the forecast's range (`YYYY-MM-DD`, or an ISO date
+  and time for hourly forecasts); one outside it is an error.
+- The summary card under the plot shows the **horizon**, the **grain** (hourly, daily, weekly)
+  and the **scale min and max**: 0 and 1 for a normalized forecast, or your `y_min` and `y_max`
+  when rescaled. It reads these from the forecast and your arguments, so there is nothing to
+  pass for them.
 
 ## Rescaling: turning 0–1 into real units
 
@@ -257,7 +271,7 @@ nxt = reuse_forecasting_agent_and_get_forecast(
 
 # show it (rescaled when you know the range)
 render_forecast_scorecard(prediction_id, title=..., y_min=..., y_max=..., invert_scale=False,
-                          y_axis_label=...)
+                          y_axis_label=..., subtitle=..., labels=[{"date": ..., "label": ...}])
 
 # need the real-unit numbers themselves
 rows = rescale_forecast(prediction_id, y_min=..., y_max=..., invert_scale=False)
