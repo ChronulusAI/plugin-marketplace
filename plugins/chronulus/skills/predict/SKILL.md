@@ -10,10 +10,11 @@ description: >
   ordinal ladder (cut/hold/hike), or an exclusive-winner field (awards, tournaments,
   multi-candidate races). Use whenever setting up or running Chronulus predictions in
   Claude.ai or Claude Code. Covers reusing one session + agent per category and bet
-  type, dual-framing (run each question twice with the framing swapped, average
-  the Beta parameters) to cancel order bias, batching, Dirichlet reconciliation,
-  and per-category guides, with detailed sport workflows (football, soccer, tennis,
-  volleyball, basketball, e-sports).
+  type, deciding when a question needs evidence-order debiasing (only when the
+  evidence naturally comes as a separate set for each outcome, as in a matchup; then
+  run it twice with the evidence order swapped and average the Beta parameters),
+  batching, Dirichlet reconciliation, and per-category guides, with detailed sport
+  workflows (football, soccer, tennis, volleyball, basketball, e-sports).
 ---
 
 # Chronulus Probability Prediction
@@ -59,8 +60,9 @@ closest sport file when you need a detailed schema.
   everything else — thresholds, "by date" events, draws, multi-outcome markets,
   exclusive-winner fields. `proposition` / `negation` fields.
 
-Whichever schema you use, the dual-framing, batching and reconciliation mechanics below
-are identical.
+Whichever schema you use, the batching and reconciliation mechanics below are identical, and
+the dual-framing mechanics apply to the questions that need it (see "Do you need order
+debiasing?").
 
 It assumes the Chronulus MCP server is connected. The tools referenced below
 (`create_chronulus_session`, `create_prediction_agent_and_get_predictions`,
@@ -166,7 +168,7 @@ Adapt field count and specifics to the sport — a hockey predictor might add
 `side1_goalie_starter` / `side2_goalie_starter`; a soccer predictor might add
 `side1_lineup_selection` / `side2_lineup_selection`. The shape (event fields once,
 symmetric side1/side2 fields) is what matters, because it's what makes the dual-framing
-swap in the next section mechanical.
+swap in the next sections mechanical, for the questions that need it.
 
 When writing the side-level field descriptions, you should avoid using "side 1" and "side 2". Instead you should refer to them only as "the SUBJECT" or "the OBJECT". This keeps Chronulus from anchoring them to a spatial or visual "side" of any data or tables you may provide.  
 
@@ -220,15 +222,86 @@ reuse_prediction_agent_and_get_prediction(
 on; drop to 3 while iterating on your schema/wording to save cost, and consider more
 for high-stakes decisions.
 
-## Dual-framing: cancel evidence order bias before trusting the number
+## Do you need order debiasing?
 
-A single call may be biased. Like a human respondent, the model is susceptible to cognitive order / framing bias 
-depending on which side occupies the `side1`/SUBJECT slot. **Never quote or act on a
-single framing's raw probability.** For every matchup, call the agent twice, swapping
-which side's data fills the `side1_*` vs `side2_*` fields, then average. Only those
-two evidence blocks trade places (names included); the event-level fields — venue, date,
-format, head-to-head, situational context — stay identical in both calls, because
-re-ordering them is error-prone and is not what the bias comes from:
+Most binary questions do not. Order debiasing (dual-framing) fixes one specific problem: when
+the evidence comes as **two separate information sets, one for each outcome**, the model can
+lean toward whichever set it reads first. It is only worth running when the question is built
+that way.
+
+**In one line: order debiasing cancels the effect of which evidence block is read first. It does
+not correct how a question is worded, or how much evidence each side has.**
+
+**Run one prediction, with no debiasing, when the research is one body of evidence about the
+question:** "will the bill pass by June 30?", "will CPI print above 0.3%?", "will the company
+ship by Q3?", "will the speaker say X?", "will turnout top 60%?". For most questions the
+evidence for Yes and for No cannot be cleanly pulled apart into two sets. Send the
+`proposition` and its exact `negation` once, report `probability` together with the
+`alpha + beta` spread, and show it with `render_prediction_scorecard`.
+
+**Order-debias when it is natural to hold a separate set of evidence for each side:** a
+matchup (team against team, player against player), a win/draw/loss line where each
+competitor has its own profile, or a race between candidates (an election, a primary, a
+nomination), where each candidate has their own information set. There the order the evidence is presented in
+is a real choice, so you run the prediction twice. The first run provides the evidence in its
+default, original order. The second uses the **exact same schema and the same frame
+prompting**, but swaps the order of the evidence along with the subject of the proposition.
+Because the probabilities of the two outcomes are complements, the two results can be
+averaged, which cancels any bias from one set of evidence being read before the other. Show
+it with `render_debiased_prediction_scorecard`.
+
+**A good sign that the research will split into separate information sets is some kind of
+competition:** competing teams or players, candidates, ideas, designs, job offers, products or
+bids. Each competitor brings their own evidence (form, record, strengths, risks), and that
+evidence is what you can write as a separate block. A question with no competition in it
+("will it pass?", "will it exceed T?", "will they say X?") usually has just one body of
+research.
+
+A quick test: *can you write the evidence for outcome A and the evidence for outcome B as two
+separate blocks without inventing a split?* If yes, debias. If you would have to cut one body
+of research in two to do it, run one prediction.
+
+**Shared context stays put.** Most competitions also sit inside a broader context that belongs
+to neither side and cannot be separated: the weather, the venue and the surface in a sport;
+the preferences of the voter base and the economic environment in an election; the market a
+product launches into; the job market around two offers. Keep this in the event-level fields,
+**identical in both runs**. Only the competitors' own evidence blocks trade places, along with
+the subject of the proposition.
+
+Do not make a second run by only rewording, or by swapping `proposition` and `negation` while
+the evidence stays put. With one information set there is no order to cancel, so that is not
+the technique, and it only doubles the cost.
+
+### Borderline cases
+
+| Case | Debias? | Why |
+|---|---|---|
+| A question with no competition, where you have for-and-against research ("will the central bank cut?") | Usually no | Put the facts in **one neutral block**. If you present them as a "for" section and an "against" section you have created two information sets, and which one comes first can move the answer; then either debias or, better, don't split the evidence. |
+| One subject against a threshold or baseline ("will the candidate top 45% of the vote?", "will the player make the cut?") | No | One subject and one body of evidence about it; there is no second side whose evidence could trade places. |
+| Spreads, moneylines, head-to-head and "who finishes ahead" questions | Yes | The proposition is about one side relative to the other, and each side brings its own evidence. |
+| Shared context that seems to favor a side (home field, a voter base that leans one way) | Yes, if the sides compete | The context stays in the event-level fields, identical in both runs. Word it in side-neutral terms, so that the shared text does not itself name one side first. |
+| One competitor with rich evidence and one with almost none (a little-known candidate) | Yes, but fix the gap | Swapping cancels order, not a difference in depth. Gather comparable evidence for each side before you debias. |
+
+This is the same problem that questionnaire designers and experimental psychologists have worked
+on for decades. In survey methodology, answers shift with the order of questions and of
+response options (question-order and response-order effects), and the standard remedy is
+counterbalancing: present the items in both orders, as in a split-ballot design, and combine the
+results. Behavioral research on primacy and recency effects in memory and persuasion shows why
+the first and last things a respondent sees carry extra weight. Order debiasing applies the
+same remedy to evidence, and it works only where there are two or more items whose order can be
+swapped.
+
+## Dual-framing: cancel evidence order bias when the evidence comes in two sets
+
+A single call may be biased when the evidence for each side is a separate block: like a human
+respondent, the model is susceptible to cognitive order / framing bias depending on which
+side occupies the `side1`/SUBJECT slot. **For a matchup, never quote or act on a single
+framing's raw probability.** Call the agent twice, swapping which side's data fills the
+`side1_*` vs `side2_*` fields, then average. Only those two evidence blocks trade places
+(names included); the shared, event-level fields — venue, weather, date, format,
+head-to-head, the wider context (in an election, the voter base and the economy) — stay
+identical in both calls, because re-ordering them is error-prone and is not what the bias
+comes from:
 
 ```
 # Frame 1: Team A's data → side1_*, Team B's data → side2_*
@@ -373,7 +446,8 @@ Rules to know before you batch:
 ## Questions that aren't matchups
 
 Most non-sports markets have no pair of sides: "will X happen by D?", "will the value
-exceed T?", "will exactly one of these candidates win?". Use the **proposition schema**
+exceed T?". (A race between candidates is the exception: each candidate has their own
+information set, so treat the candidates as competing sides; see below.) Use the **proposition schema**
 from "Beyond binary" below even when there are only two outcomes. The agent keeps one
 fixed input model, and each call carries two fields:
 
@@ -383,21 +457,21 @@ fixed input model, and each call carries two fields:
   (everything that makes the market resolve No, including edge cases like ties,
   cancellation or a missed deadline).
 
-What dual-framing flips depends on the question. Like a human respondent, the model is
-susceptible to cognitive order / framing bias depending on which side occupies the
-`side1`/SUBJECT slot, so you flip the *order the agent sees things in*:
+Whether to debias depends on whether the evidence has two sides (see "Do you need order
+debiasing?" above):
 
-- **Two competing sides, each with its own evidence** (a match where a draw or other
-  outcomes are possible): keep the `side1_*` / `side2_*` evidence blocks next to
-  `proposition` / `negation` and flip the evidence exactly as in a matchup. See "Beyond
-  binary" below.
-- **No competing sides** (a threshold, a date, one candidate, one word in a speech):
-  there are no two evidence sets to reorder, so the only thing left to flip is the two
-  statements. Swap `proposition` ↔ `negation` between the calls.
+- **No competing sides** (a threshold, a date, one word in a speech — most of these
+  questions): the research is one information set, so there is no order to
+  cancel. Run **one** prediction and report it; do not swap `proposition` ↔ `negation`
+  for a second run.
+- **Two or more competing sides, each with its own evidence** (a match where a draw or other
+  outcomes are possible, or a race between candidates): keep the `side1_*` / `side2_*` evidence blocks next to
+  `proposition` / `negation` and debias by flipping the evidence exactly as in a matchup.
+  See "Beyond binary" below.
 
-Either way the same averaging formula applies. Around those fields, build the input
-model from the category reference: an event block (what, when, resolution criteria,
-`as_of_date`) and an evidence block (the category's key facts).
+Around those fields, build the input model from the category reference: an event block
+(what, when, resolution criteria, `as_of_date`) and an evidence block (the category's key
+facts).
 
 Four habits make these questions work:
 
@@ -413,7 +487,7 @@ Four habits make these questions work:
 4. **Mutually exclusive or not?** An exclusive set (one winner among K) or an ordinal
    ladder gets reconciled with the Dirichlet tools. A set of independent yes/no
    questions (several words in a speech, several thresholds that can all hold) does
-   *not* — each is its own dual-framed binary, and they need not sum to 1.
+   *not* — each is its own binary prediction, and they need not sum to 1.
 
 ## When a call fails
 
@@ -486,34 +560,45 @@ pred["billing"]
   buying Yes, the bid when selling), net of fees, not the last-trade or midpoint, and
   check the market's rules text: the contract resolves on its own wording, which can
   differ from the headline question.
-- Use `render_debiased_prediction_scorecard` (see Dual-framing above) for the
-  bias-corrected result you actually report on a matchup. `render_prediction_scorecard`
-  renders a single, un-debiased framing — reach for it only when inspecting one framing
-  on its own (e.g. while debugging a schema), not as the user-facing result for a
-  matchup. Periodically call `get_risk_assessment_scorecard(session_id)` to review
-  calibration and risk across everything predicted under this session so far.
+- **Show it with the scorecard that matches how you ran it.** A single prediction (one
+  information set) → `render_prediction_scorecard`; an order-debiased matchup →
+  `render_debiased_prediction_scorecard` (never show one framing of a matchup on its own);
+  more than two outcomes → the `render_*_dirichlet_scorecard` tools. Fill in the labels so
+  the card reads naturally for the question; the defaults are generic:
+  - `title`: what was predicted, under 60 characters. `subtitle`: the exact question, if the
+    title doesn't say it.
+  - `yes_label` / `no_label` (or `subject_label` / `object_label` on the debiased card): **2 to
+    3 words each**, under 24 characters, e.g. `"Cut"` / `"Hold or hike"`. Longer labels are
+    shrunk and crowd the card. `yes_label` is the outcome in the first (side1 / proposition)
+    slot.
+  - `show_american_odds=true` only for sports or betting-market questions; it is off by
+    default. `include_experts=false` gives a compact card. `chart_marker` picks the statistic the
+    chart marks when it opens (mean by default; the reader can switch to the median or mode).
+- Periodically call `get_risk_assessment_scorecard(session_id)` to review calibration and risk
+  across everything predicted under this session so far.
 
 ## Beyond binary: markets with more than two outcomes
 
 Everything above assumes a strict binary — exactly two mutually exclusive results.
 Plenty of real markets aren't: a soccer match can end in a **draw**, a central bank
 decision has more than two rate-change sizes, a horse race has a whole field of
-**exclusive winners**. This section generalizes the same dual-framing technique to
-those markets.
+**exclusive winners**. This section extends the same ideas to those markets.
 
 **The pattern this generalizes from:** the reference implementation for this is a
 3-outcome soccer match result — win / draw / loss. Instead of one binary proposition
 per matchup (as above), it defines *three* binary propositions for the same match —
-"Team A wins outright", "Team B wins outright", "the match ends in a draw" — dual-frames
-and debiases **each one independently** exactly as in the previous section, and then
+"Team A wins outright", "Team B wins outright", "the match ends in a draw" — and, because
+each competitor has its own evidence, dual-frames and debiases **each one independently**
+exactly as in the previous section, and then
 reconciles the three resulting Betas into a single Dirichlet distribution so the three
 probabilities are internally consistent (sum to 1, not just three separate numbers that
 happen to roughly do so). A draw is also structurally different from the two win
 outcomes — it sits "between" them — so the reconciliation can enforce that a draw is
 never the least likely of the three, which is a real constraint on soccer scorelines,
 not just a modeling convenience. The rest of this section generalizes that exact
-pattern — one binary proposition per outcome, debiased independently, then reconciled
-— from 3 outcomes to any K, and from soccer to any market with the same shape.
+pattern — one binary proposition per outcome, debiased independently when the outcomes have
+competing evidence sets (and asked once when they don't), then reconciled — from 3 outcomes
+to any K, and from soccer to any market with the same shape.
 
 ### 1. Recognize which shape you have
 
@@ -585,10 +670,18 @@ How to read the table:
 
 For an ordinal market with more categories (e.g. the rate-decision ladder), the same idea
 applies with one proposition/negation pair per category. When the outcomes have no
-competing sides at all (a threshold ladder, a candidate field), there is no evidence to
-flip: swap `proposition` and `negation` only.
+competing sides at all (a threshold ladder, a set of date buckets), the research is one
+information set and there is no evidence to flip: ask each outcome **once** (its
+proposition and exact negation), skip step 3, and pass each outcome's raw `beta_params`
+as its `alpha` / `beta` in step 4.
 
-### 3. Debias each outcome independently
+### 3. Debias each outcome independently (only when the outcomes have competing evidence)
+
+This step is for markets where each outcome has its own evidence blocks, such as a
+win/draw/loss match. For a threshold ladder or a set of date buckets with one information
+set, skip it. A field of candidates does have a separate information set for each candidate,
+so debias it: give each candidate's evidence its own block and swap the order of the blocks
+along with the subject of the proposition, as in a matchup.
 
 For **each** outcome, run the exact dual-framing formula from the section above —
 completely independently per outcome, before any reconciliation happens:
@@ -623,8 +716,9 @@ Both the `reconcile_*` and the `render_*_dirichlet_scorecard` tools take these d
 
 ### 4. Reconcile the per-outcome Betas into one Dirichlet
 
-To **show the user** the result, pass the K debiased `alpha`/`beta` pairs from step 3 to the
-`render_*` tool matching your market's shape (see step 1). It reconciles all K outcomes and
+To **show the user** the result, pass the K `alpha`/`beta` pairs (the debiased ones from step 3, or
+the raw `beta_params` if you skipped it) to the `render_*` tool matching your market's shape
+(see step 1). It reconciles all K outcomes and
 draws the result, with a per-outcome section showing the original vs. reconciled Beta and
 the outcome's confidence intervals:
 
@@ -639,6 +733,18 @@ render_ordinal_dirichlet_scorecard(
     title="Team A vs Team B — Match Result",
 )
 ```
+
+**The scorecard takes at most 8 outcomes**, to stay small enough to display, and the same limit is
+what fits one dual-framed batch (2K items × 2 experts ≤ 32). Name each outcome in **2 to 3
+words** (`"Cut 25 bp"`, `"Hold"`, not a sentence); the label is shown in the ranked list. For a
+field larger than 8 (a golf tournament, a crowded primary), either:
+
+- ask for the numbers with the `reconcile_*` tool, which has no limit, and report the leaders in
+  text; or
+- show the leading 7 outcomes plus one **"Field"** outcome for everyone else. "Field" has to be
+  elicited as its own proposition ("none of the named candidates wins") so the K outcomes still
+  cover every result; do not just drop the tail, because the scorecard reconciles only the
+  outcomes you pass and would hand their probabilities the tail's share.
 
 Each outcome's expanded section has a **"Show order-debiased scorecard"** button. Clicking
 it sends you a message asking for that outcome's dual-framing scorecard. When you get it,
@@ -736,7 +842,11 @@ session_id = create_chronulus_session(name=..., situation=..., task=...)
 first = create_prediction_agent_and_get_predictions(session_id, input_data_model, input_data_frame1, num_experts=5)
 agent_id = first["agent_id"]
 
-# Every matchup thereafter: two calls per game, same agent_id, sides swapped
+# A question with one information set (most binary questions): one call, no debiasing
+pred = reuse_prediction_agent_and_get_prediction(agent_id, input_data, num_experts=5)
+render_prediction_scorecard(request_id=pred["request_id"], title=..., yes_label=..., no_label=...)  # 2-3 word labels
+
+# A matchup (separate evidence per side): two calls per game, same agent_id, evidence order swapped
 pred_orig = reuse_prediction_agent_and_get_prediction(agent_id, input_data_frame1, num_experts=5)
 pred_rev  = reuse_prediction_agent_and_get_prediction(agent_id, input_data_frame2, num_experts=5)
 

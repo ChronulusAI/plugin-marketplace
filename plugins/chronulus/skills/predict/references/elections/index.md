@@ -8,18 +8,21 @@ specific to elections.
 
 | Market | Shape | Schema |
 |---|---|---|
-| Two-candidate race winner | binary | proposition/negation (or matchup with candidates as SUBJECT/OBJECT) |
-| Multi-candidate race, primary, or any "exactly one wins" field | exclusive-winner, K outcomes | proposition/negation, one Beta per candidate → `render_exclusive_dirichlet_scorecard` |
+| Two-candidate race winner | binary, order-debiased | matchup with the candidates as SUBJECT/OBJECT, each with their own evidence block → `render_debiased_prediction_scorecard` |
+| Multi-candidate race, primary, or any "exactly one wins" field | exclusive-winner, K outcomes, each candidate order-debiased | one Beta per candidate from candidate-level evidence blocks, debiased → `render_exclusive_dirichlet_scorecard` |
 | Party control (chamber control, seat count buckets) | ordinal buckets (or binary on a threshold) | proposition/negation → `render_ordinal_dirichlet_scorecard` |
 | Vote share, margin, turnout above a threshold | binary on a threshold | proposition/negation with the threshold in the text |
 | Runoff happens / no candidate above 50% | binary | proposition/negation |
 | Referendum / ballot measure passes | binary | proposition/negation |
 
-Candidates in an election are not a "SUBJECT vs OBJECT" matchup in the sense of
-`SKILL.md` Step 2, because there are often more than two. Default to
-proposition/negation and dual-frame by swapping the two statements; there are no two
-evidence blocks to flip. If a race does reduce to two candidates with their own evidence
-blocks, flip the evidence as in a matchup.
+Each candidate has their own information set (their polling, money, endorsements, record), so
+a race between candidates is a case for evidence-order debiasing (see "Do you need order
+debiasing?" in `SKILL.md`). With two candidates, flip the evidence blocks as in a matchup. With
+more than two, give each candidate's evidence its own block and, for each candidate's
+proposition, run it once in the original order and once with the order of the blocks swapped
+along with the subject of the proposition. The markets that are not about candidates (turnout,
+vote-share and margin thresholds, a runoff, a referendum) have one body of evidence: run one
+prediction and do not debias.
 
 ## Session template
 
