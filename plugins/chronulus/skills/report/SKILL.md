@@ -14,7 +14,7 @@ description: >
 
 # Reporting to Chronulus
 
-<!-- plugin-version -->Plugin version: 0.2.10<!-- /plugin-version -->
+<!-- plugin-version -->Plugin version: 0.2.11<!-- /plugin-version -->
 
 Two tools of the Chronulus MCP server send a report to the Chronulus team: `draft_feedback`
 builds a draft and sends nothing, and `submit_feedback` sends it. If either tool is missing,
