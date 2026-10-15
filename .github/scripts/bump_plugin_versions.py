@@ -6,6 +6,10 @@ A plugin counts as changed when any file under plugins/<name>/ differs from the 
 (.claude-plugin/plugin.json) is the source of truth for the version; the Codex manifest
 (plugin.json) is kept in sync with it.
 
+The version is also written into the text of each of the plugin's skills, between
+`<!-- plugin-version -->` and `<!-- /plugin-version -->` markers, so that an agent that loads a skill
+can tell a report which plugin version it was running. Skills without the markers are left alone.
+
 The bump is relative to the version on the base ref, and only happens when this branch's
 version is not already ahead of it. That makes the script idempotent (one bump per release
 candidate, however many pushes) and lets a release candidate that falls behind a newer
@@ -14,7 +18,8 @@ release re-bump past it.
 Usage:
     bump_plugin_versions.py <base_ref>
 
-Prints one "<plugin> <old> -> <new>" line per bumped plugin, and nothing if none changed.
+Prints one "<plugin> <old> -> <new>" line per bumped plugin, and one "<plugin> <version> stamped" line when
+only the skills' version text had to be brought in line, and nothing if none changed.
 """
 from __future__ import annotations
 
@@ -28,6 +33,7 @@ PLUGINS_DIR = "plugins"
 MANIFEST = ".claude-plugin/plugin.json"
 CODEX_MANIFEST = "plugin.json"
 SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
+STAMP = re.compile(r"(<!-- plugin-version -->Plugin version: )[^<]*(<!-- /plugin-version -->)")
 
 
 def changed_files(base: str) -> list[str]:
@@ -73,6 +79,18 @@ def base_version(base: str, path: Path) -> str | None:
     return json.loads(res.stdout)["version"] if res.returncode == 0 else None
 
 
+def stamp_skills(plugin: str, version: str) -> bool:
+    """Writes the version into the plugin-version markers of the plugin's skills; True if any file changed."""
+    changed = False
+    for path in sorted((Path(PLUGINS_DIR) / plugin / "skills").glob("*/SKILL.md")):
+        text = path.read_text()
+        stamped = STAMP.sub(rf"\g<1>{version}\g<2>", text)
+        if stamped != text:
+            path.write_text(stamped)
+            changed = True
+    return changed
+
+
 def main(base: str) -> None:
     for name in changed_plugins(changed_files(base)):
         path = Path(PLUGINS_DIR) / name / MANIFEST
@@ -83,13 +101,17 @@ def main(base: str) -> None:
             continue  # a new plugin: it ships at whatever version it declares
         current = json.loads(path.read_text())["version"]
         if parse(current) > parse(released):
-            continue  # already bumped for this release
+            # already bumped for this release; the skills may still show an older version
+            if stamp_skills(name, current):
+                print(f"{name} {current} stamped")
+            continue
         new = bump_patch(released)
         # Rewrite just the version string so the rest of the file's formatting is untouched.
         for manifest in (path, path.parent.parent / CODEX_MANIFEST):
             if manifest.exists():
                 text = manifest.read_text()
                 manifest.write_text(re.sub(r'("version"\s*:\s*")[^"]*(")', rf"\g<1>{new}\g<2>", text, count=1))
+        stamp_skills(name, new)
         print(f"{name} {current} -> {new}")
 
 

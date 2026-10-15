@@ -25,3 +25,17 @@ version bump can land before the squash merge:
 4. Merge `main` into the `rc/` branch if `main` has moved, then open a PR from `rc/<name>`
    to `main` and squash-merge it. A PR into `main` from any other branch fails the
    workflow's guard check.
+
+## Checks
+
+The Check Plugins workflow runs on every pull request into `main` or an `rc/` branch, and on pushes to
+`rc/` branches. It runs `.github/scripts/check_plugin_specs.py` (needs PyYAML) and fails if a skill's
+`SKILL.md` does not meet the marketplace's specs. Run it locally before you push:
+
+```bash
+python3 .github/scripts/check_plugin_specs.py
+```
+
+Today it checks that every skill has front matter with a `name` and a `description`, and that the
+`description` is at most 1024 characters. claude.ai stores a description cut to 1024 characters (Claude
+Code reads the full text from the file), and the marketplace shows a longer one as "Synced with warnings".
