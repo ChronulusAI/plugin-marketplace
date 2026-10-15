@@ -15,6 +15,8 @@ description: >
 
 # Chronulus Forecasting
 
+<!-- plugin-version -->Plugin version: 0.2.11<!-- /plugin-version -->
+
 This skill turns the Chronulus MCP tools into a repeatable forecasting
 pipeline. A Chronulus forecast is **normalized**: the agent returns a value between 0
 and 1 for every period in the horizon, plus a written explanation. Think of it as a
@@ -204,6 +206,7 @@ A failed call is reported as an error (the tool result has `isError` set), with 
 
 - Use `retryable` and `charged` to decide, not guesswork: `retryable: false` means do not resubmit as-is, and `retryable: null` means unknown, so read the message first.
 - Always quote the `request_id` when you tell the user a request failed.
+- If a failure repeats or looks like a problem with Chronulus rather than with the inputs, offer to report it (once; see the `report` skill). Never send a report the user has not approved.
 
 **Never present a result with no forecast values as a forecast.** If a call returns without any forecast values, treat it as a failed call, not a result, and ask the user to check their account balance before retrying.
 

@@ -2,22 +2,22 @@
 name: predict
 description: >
   Best practices for using the Chronulus MCP server to produce reusable, calibrated
-  probability estimates for high-value, intelligence, and prediction-market-style
-  questions (Kalshi, Polymarket, and similar) in sports, elections, politics, culture,
-  crypto, commodities, climate, economics, mentions, finance, and tech & science.
-  Handles binary markets ("will A beat B?", "will X happen by date D?", "will Y exceed
-  a threshold?") and markets with more than two outcomes: a 3-way soccer line, an
-  ordinal ladder (cut/hold/hike), or an exclusive-winner field (awards, tournaments,
-  multi-candidate races). Use whenever setting up or running Chronulus predictions in
-  Claude.ai or Claude Code. Covers reusing one session + agent per category and bet
-  type, deciding when a question needs evidence-order debiasing (only when the
-  evidence naturally comes as a separate set for each outcome, as in a matchup; then
-  run it twice with the evidence order swapped and average the Beta parameters),
-  batching, Dirichlet reconciliation, and per-category guides, with detailed sport
-  workflows (football, soccer, tennis, volleyball, basketball, e-sports).
+  probability estimates for prediction-market-style questions (Kalshi, Polymarket, and
+  similar) in sports, elections, politics, culture, crypto, commodities, climate,
+  economics, mentions, finance, and tech & science. Handles binary markets ("will A
+  beat B?", "will X happen by date D?", "will Y exceed a threshold?") and markets with
+  more than two outcomes: a 3-way soccer line, an ordinal ladder (cut/hold/hike), or
+  an exclusive-winner field (awards, tournaments, multi-candidate races). Use whenever
+  setting up or running Chronulus predictions in Claude.ai or Claude Code. Covers
+  reusing one session + agent per category and bet type, when a question needs
+  evidence-order debiasing (only when the evidence comes as a separate set per outcome,
+  as in a matchup), batching, Dirichlet reconciliation, and per-category guides with
+  sport workflows (football, soccer, tennis, volleyball, basketball, e-sports).
 ---
 
 # Chronulus Probability Prediction
+
+<!-- plugin-version -->Plugin version: 0.2.11<!-- /plugin-version -->
 
 This skill turns the Chronulus MCP tools into a repeatable pipeline for probability
 estimates on prediction-market-type questions, starting from the simplest case — a binary
@@ -507,6 +507,7 @@ A failed call is reported as an error (the tool result has `isError` set), with 
 - Use `retryable` and `charged` to decide, not guesswork: `retryable: false` means do not resubmit as-is, and `retryable: null` means unknown, so read the message first.
 - If `partial` is true, some experts finished and were already charged. Do not resubmit the whole request (that charges them again); use the completed results or run a new request for the missing part.
 - Always quote the `request_id` when you tell the user a request failed.
+- If a failure repeats or looks like a problem with Chronulus rather than with the inputs, offer to report it (once; see the `report` skill). Never send a report the user has not approved.
 - In a batch, check every item for an `"error"` key; a failed item carries the same `code`, `request_id`, `charged` and `retryable` fields. One item failing for `INSUFFICIENT_FUNDS` means the rest will too, so stop submitting more.
 - When you run both framings of a dual-framing pair, don't average or debias a pair where either call failed.
 

@@ -1,0 +1,37 @@
+name: Tag Release
+
+# Tags each plugin's version on main, so a version that a report or a user quotes (the plugin version is
+# in the text of every skill) can be matched to its commit: `git rev-parse chronulus-v0.2.10`.
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'plugins/**'
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tag the plugin versions
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          for manifest in plugins/*/.claude-plugin/plugin.json; do
+            name=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['name'])" "$manifest")
+            version=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['version'])" "$manifest")
+            tag="${name}-v${version}"
+            if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+              echo "${tag} already exists"
+            else
+              git tag "${tag}" "${GITHUB_SHA}"
+              git push origin "${tag}"
+              echo "Tagged ${tag}"
+            fi
+          done
