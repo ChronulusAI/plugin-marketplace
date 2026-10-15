@@ -58,7 +58,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add plugins/*/.claude-plugin/plugin.json plugins/*/plugin.json
+          git add plugins/*/.claude-plugin/plugin.json plugins/*/plugin.json plugins/*/skills/*/SKILL.md
           git commit -m "Bump version"
           git pull --rebase origin "$BRANCH"
           git push origin "HEAD:$BRANCH"

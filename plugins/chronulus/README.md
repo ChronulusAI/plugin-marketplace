@@ -1,6 +1,6 @@
 # chronulus
 
-Skills for Claude Code, Claude.ai and OpenAI Codex that teach your agent how to use the Chronulus MCP server. This plugin includes two skills: `predict` and `forecast`.
+Skills for Claude Code, Claude.ai and OpenAI Codex that teach your agent how to use the Chronulus MCP server. This plugin includes three skills: `predict`, `forecast` and `report`.
 
 The plugin also works on Claude.ai and ChatGPT.com, and the MCP server includes UIs built
 specifically for those platforms (such as the prediction and forecast scorecards).
@@ -34,6 +34,17 @@ pitfalls specific to that category:
 | Mentions | `mentions/index.md` | planned |
 | Finance | `finance/index.md` | planned |
 | Tech and science | `tech-science/index.md` | planned |
+
+## `report`
+
+A skill that teaches Claude how to report a problem or an idea to Chronulus, or to ask to talk to
+someone there (a demo, a design partnership, a custom enterprise build or integration, or an investor
+question), with the MCP server's `draft_feedback` and `submit_feedback` tools. Claude drafts the report
+and shows it to you, and nothing is sent until you approve it. A report carries ids (requests, session,
+agent) as evidence rather than the inputs themselves, and the plugin and server versions.
+
+Every skill's text states the plugin version (a line that starts "Plugin version"), kept in line with
+`plugin.json` by the release workflow. Each release is tagged on `main` as `chronulus-v<version>`.
 
 ## What it covers
 

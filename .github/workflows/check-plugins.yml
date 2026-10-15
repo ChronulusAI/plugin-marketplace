@@ -1,0 +1,34 @@
+name: Check Plugins
+
+# Fails a release candidate or a pull request whose skills the marketplace would sync with warnings (for
+# example a skill description over the 1024 characters claude.ai keeps). The checks are in
+# .github/scripts/check_plugin_specs.py; run it locally with `python3 .github/scripts/check_plugin_specs.py`
+# (it needs PyYAML).
+on:
+  pull_request:
+    branches: [ main, 'rc/**' ]
+  push:
+    branches: [ 'rc/**' ]
+    paths:
+      - 'plugins/**'
+      - '.github/scripts/check_plugin_specs.py'
+      - '.github/workflows/check-plugins.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  specs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Check the skills against the marketplace specs
+        run: python3 .github/scripts/check_plugin_specs.py
