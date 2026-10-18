@@ -21,12 +21,12 @@ price as a reason to re-check your evidence and resolution rules before anything
 
 | Market | Shape | Schema |
 |---|---|---|
-| Close above/below a level on a date | binary on a threshold | proposition/negation, quant baseline in evidence |
-| Close in a range (bucket markets) | ordinal | proposition/negation per bucket |
-| Earnings beat/miss, guidance raised | binary | proposition/negation, consensus in evidence |
-| Deal completes by date, IPO prices by date | binary | proposition/negation |
-| Which company is largest by market cap on a date | exclusive-winner | proposition/negation per company |
-| Yield or VIX above a level | binary on a threshold | proposition/negation |
+| Close above/below a level on a date | binary on a threshold | proposition, quant baseline in evidence |
+| Close in a range (bucket markets) | ordinal | proposition per bucket |
+| Earnings beat/miss, guidance raised | binary | proposition, consensus in evidence |
+| Deal completes by date, IPO prices by date | binary | proposition |
+| Which company is largest by market cap on a date | exclusive-winner | proposition per company |
+| Yield or VIX above a level | binary on a threshold | proposition |
 
 ## Session template
 
@@ -36,8 +36,7 @@ situation: >
     I am a professional forecaster who evaluates financial events and market levels. I
     want independent, well-calibrated probabilities to compare against prediction-market prices.
 task: >
-    Predict the probability that the SUBJECT proposition is true, as opposed to the OBJECT
-    proposition (its logical negation), using the evidence provided and the
+    Predict the probability that the proposition is true, using the evidence provided and the
     resolution rules stated, as of the date supplied.
 ```
 
@@ -47,7 +46,7 @@ beats", "M&A completion", "IPO timing", "market-cap ranking".
 ## Input fields
 
 Event fields: `security_or_event`, `resolution_criteria` (official close, source, date,
-adjustments), `as_of_date`, `proposition`, `negation`.
+adjustments), `as_of_date`, `proposition`.
 
 Evidence fields:
 - `market_snapshot` — current level, recent range, implied volatility, days to expiry.

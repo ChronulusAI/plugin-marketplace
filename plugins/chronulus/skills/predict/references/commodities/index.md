@@ -21,11 +21,11 @@ to commodities.
 
 | Market | Shape | Schema |
 |---|---|---|
-| Settle or spot above a level on a date | binary on a threshold | proposition/negation, quant baseline in evidence |
-| Price range buckets on a date | ordinal | proposition/negation per bucket |
-| Monthly average or weekly print above a level | binary on a threshold | proposition/negation |
-| OPEC+ / policy decision (cut, hold, raise) | ordinal ladder | proposition/negation per outcome |
-| Inventory build vs draw | binary | proposition/negation, consensus in evidence |
+| Settle or spot above a level on a date | binary on a threshold | proposition, quant baseline in evidence |
+| Price range buckets on a date | ordinal | proposition per bucket |
+| Monthly average or weekly print above a level | binary on a threshold | proposition |
+| OPEC+ / policy decision (cut, hold, raise) | ordinal ladder | proposition per outcome |
+| Inventory build vs draw | binary | proposition, consensus in evidence |
 
 ## Session template
 
@@ -35,8 +35,7 @@ situation: >
     I am a professional forecaster who evaluates commodity prices and supply events. I
     want independent, well-calibrated probabilities to compare against prediction-market prices.
 task: >
-    Predict the probability that the SUBJECT proposition is true, as opposed to the OBJECT
-    proposition (its logical negation), using the evidence provided and the
+    Predict the probability that the proposition is true, using the evidence provided and the
     resolution rules stated, as of the date supplied.
 ```
 
@@ -46,7 +45,7 @@ gasoline price", "gold price threshold", "weekly EIA inventory change".
 ## Input fields
 
 Event fields: `commodity_and_contract`, `resolution_criteria` (contract month, price type,
-source, date and time), `as_of_date`, `proposition`, `negation`.
+source, date and time), `as_of_date`, `proposition`.
 
 Evidence fields:
 - `price_and_curve` — current price, the relevant futures contract and curve shape

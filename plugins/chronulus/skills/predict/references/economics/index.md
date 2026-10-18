@@ -9,11 +9,11 @@ what is specific to economics.
 
 | Market | Shape | Schema |
 |---|---|---|
-| Release above/below a level (CPI MoM above 0.3%, unemployment at least 4.2%) | binary on a threshold | proposition/negation, consensus in evidence |
-| Release in buckets | ordinal | proposition/negation per bucket → `render_ordinal_dirichlet_scorecard` |
-| Central bank decision (cut by size / hold / hike by size) | ordinal ladder | proposition/negation per outcome, outcomes in scale order |
-| Recession declared / GDP negative for a quarter | binary | proposition/negation |
-| Level on a date (mortgage rates, gas prices, claims) | binary or ordinal | proposition/negation |
+| Release above/below a level (CPI MoM above 0.3%, unemployment at least 4.2%) | binary on a threshold | proposition, consensus in evidence |
+| Release in buckets | ordinal | proposition per bucket → `render_ordinal_dirichlet_scorecard` |
+| Central bank decision (cut by size / hold / hike by size) | ordinal ladder | proposition per outcome, outcomes in scale order |
+| Recession declared / GDP negative for a quarter | binary | proposition |
+| Level on a date (mortgage rates, gas prices, claims) | binary or ordinal | proposition |
 
 The rate-decision ladder is the worked ordinal example in `SKILL.md` (cut > 25 bps, cut
 25 bps, hold, hike 25 bps, hike > 25 bps). Keep the outcomes in order along the scale.
@@ -27,8 +27,7 @@ situation: >
     decisions. I want independent, well-calibrated probabilities to compare against
     prediction-market prices.
 task: >
-    Predict the probability that the SUBJECT proposition is true, as opposed to the OBJECT
-    proposition (its logical negation), using the evidence provided and the
+    Predict the probability that the proposition is true, using the evidence provided and the
     resolution rules stated, as of the date supplied.
 ```
 
@@ -40,7 +39,7 @@ session and agent.
 
 Event fields: `release_name_and_date`, `series_definition` (headline or core,
 seasonally adjusted or not, month-over-month or year-over-year, units, rounding),
-`resolution_criteria` (first print or revised, source), `as_of_date`, `proposition`, `negation`.
+`resolution_criteria` (first print or revised, source), `as_of_date`, `proposition`.
 
 Evidence fields:
 - `consensus_and_range` — the economist survey median, range and number of respondents,

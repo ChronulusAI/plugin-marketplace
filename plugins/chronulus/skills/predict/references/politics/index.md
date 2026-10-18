@@ -9,14 +9,14 @@ in `SKILL.md`; this file adds what is specific to these markets.
 
 | Market | Shape | Schema |
 |---|---|---|
-| Will X happen by date D (bill passes, order signed, person confirmed) | binary | proposition/negation |
-| When will X happen (date buckets) | ordinal or exclusive over buckets | proposition/negation, one Beta per bucket |
-| Approval or poll number above a threshold on a date | binary on a threshold | proposition/negation |
-| Court ruling outcome | binary or exclusive (outcomes) | proposition/negation |
-| Who will hold a role (nominee, leader) | exclusive-winner | proposition/negation per candidate, each with their own evidence (see `elections/index.md`) |
+| Will X happen by date D (bill passes, order signed, person confirmed) | binary | proposition |
+| When will X happen (date buckets) | ordinal or exclusive over buckets | proposition, one Beta per bucket |
+| Approval or poll number above a threshold on a date | binary on a threshold | proposition |
+| Court ruling outcome | binary or exclusive (outcomes) | proposition |
+| Who will hold a role (nominee, leader) | exclusive-winner | proposition per candidate, each with their own evidence (see `elections/index.md`) |
 
 Events like a bill passing, a ruling or a poll threshold have one body of evidence and no
-SUBJECT/OBJECT pair, so use proposition/negation and run **one** prediction (no order
+SUBJECT/OBJECT pair, so use proposition and run **one** prediction (no order
 debiasing; see "Do you need order debiasing?" in `SKILL.md`). A question about **who**, with
 candidates who each have their own information set, is a case for order debiasing: follow
 `elections/index.md`.
@@ -29,8 +29,7 @@ situation: >
     I am a professional forecaster who evaluates political and policy events. I want
     independent, well-calibrated probabilities to compare against prediction-market prices.
 task: >
-    Predict the probability that the SUBJECT proposition is true, as opposed to the OBJECT
-    proposition (its logical negation), using the evidence provided and the
+    Predict the probability that the proposition is true, using the evidence provided and the
     resolution rules stated, as of the date supplied.
 ```
 
@@ -40,7 +39,7 @@ nominations, a particular conflict or negotiation). Reuse across events of that 
 ## Input fields
 
 Event fields: `event_description`, `resolution_criteria` (the exact trigger and the
-authority that decides it), `deadline`, `as_of_date`, `proposition`, `negation`.
+authority that decides it), `deadline`, `as_of_date`, `proposition`.
 
 Evidence fields:
 - `process_and_calendar` — the procedural path and where the event stands (committee,

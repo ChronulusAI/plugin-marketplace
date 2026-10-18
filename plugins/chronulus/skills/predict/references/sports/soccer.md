@@ -9,11 +9,11 @@ uses the "Beyond binary" section of `SKILL.md`.
 
 | Market | Shape / schema | Session name |
 |---|---|---|
-| Full-time result: home / draw / away | ordinal, 3 outcomes, proposition/negation | "Soccer Match Result Predictor" |
+| Full-time result: home / draw / away | ordinal, 3 outcomes, proposition | "Soccer Match Result Predictor" |
 | To advance / win the tie (two-legged ties, knockout rounds) | binary, matchup or proposition | "Soccer Knockout Advance Predictor" |
 | Draw no bet | binary conditional on no draw; derive it from the 3-way result rather than asking directly | none |
-| Both teams to score | binary, proposition/negation | "Soccer BTTS Predictor" |
-| Total goals over/under | binary, proposition/negation | "Soccer Total Goals Predictor" |
+| Both teams to score | binary, proposition | "Soccer BTTS Predictor" |
+| Total goals over/under | binary, proposition | "Soccer Total Goals Predictor" |
 | Tournament / league / top-scorer winner | exclusive-winner | one session per competition |
 
 If the market is "Team A wins" (a Yes/No contract on one outcome), it is not a
@@ -28,16 +28,16 @@ situation: >
     I am a professional forecaster who evaluates association football matches. I want
     independent, well-calibrated probabilities for each full-time result.
 task: >
-    Predict the probability that the SUBJECT proposition is true, as opposed to the OBJECT
-    proposition (its logical negation), for a match decided over 90
+    Predict the probability that the proposition is true, for a match decided over 90
     minutes plus stoppage time (extra time and penalties are not included).
 ```
 
-Keep the `side1_*` / `side2_*` evidence blocks and add the `proposition` / `negation`
-fields, with three outcome propositions per match, each dual-framed as in the worked
+Keep the `side1_*` / `side2_*` evidence blocks and add a `proposition`
+field, with three outcome propositions per match, each dual-framed as in the worked
 example in `SKILL.md`. In the reversed call the two evidence blocks trade places (home
-team's information in `side2_*`, away team's in `side1_*`) and the statements are the
-exact complements; event-level fields do not change. Do not ask "away team wins" as the
+team's information in `side2_*`, away team's in `side1_*`) and the proposition is the
+exact complement of the original, worded as an event that happens ("away team wins or the
+match is drawn", not "home team does not win"); event-level fields do not change. Do not ask "away team wins" as the
 reversed question for the home-win outcome, since the draw sits between them. Order for the ordinal tool:
 `[home_win, draw, away_win]`, so that the draw is the interior outcome. Keep this order
 consistent in every match, and label by home/away rather than by "favorite".
@@ -91,7 +91,7 @@ consistent in every match, and label by home/away rather than by "favorite".
 
 1. Create the session once.
 2. Build the agent on the first outcome of the first match with the matchup schema
-   plus the proposition/negation fields.
+   plus the proposition field.
 3. For each match, run one batch of 3 outcomes × 2 framings × 2 experts = 12 experts
    (the 32 cap allows two matches per batch). The reversed calls flip the evidence blocks.
 4. Debias all three outcomes in one `debias_beta_params` call, then `render_ordinal_dirichlet_scorecard`

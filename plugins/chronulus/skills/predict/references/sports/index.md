@@ -24,14 +24,14 @@ closest sport file when you build its schema.
 | Market | Shape | Schema | Tools |
 |---|---|---|---|
 | Moneyline / match winner with no tie possible | binary | matchup (`side1_*`/`side2_*`) | dual-frame + `render_debiased_prediction_scorecard` |
-| Moneyline with a draw possible (soccer 90-min, some hockey/NFL regulation lines) | ordinal, 3 outcomes | proposition/negation | one dual-framed Beta per outcome → `render_ordinal_dirichlet_scorecard` |
-| Spread cover, total over/under, player prop, "wins by 2+ sets" | binary on a threshold | proposition/negation (the line is written into the proposition) | dual-frame |
+| Moneyline with a draw possible (soccer 90-min, some hockey/NFL regulation lines) | ordinal, 3 outcomes | proposition | one dual-framed Beta per outcome → `render_ordinal_dirichlet_scorecard` |
+| Spread cover, total over/under, player prop, "wins by 2+ sets" | binary on a threshold | proposition (the line is written into the proposition) | dual-frame |
 | Series winner (best-of-N) | binary | matchup, with series state in event fields | dual-frame |
-| Tournament / race / leaderboard winner | exclusive-winner, K outcomes | proposition/negation | `render_exclusive_dirichlet_scorecard` |
+| Tournament / race / leaderboard winner | exclusive-winner, K outcomes | proposition | `render_exclusive_dirichlet_scorecard` |
 
 Rule of thumb: if the question is "does A beat B?" and exactly one of them must win,
 use the matchup schema. If it is about a *threshold* or a *draw*, there is no natural
-SUBJECT/OBJECT pair, so use proposition/negation. Different bet types are different
+SUBJECT/OBJECT pair, so use proposition. Different bet types are different
 sessions (see "The core idea" in `SKILL.md`).
 
 ## What to gather for any sport
@@ -54,8 +54,8 @@ sport's own `matchup_stats`. Across sports, the evidence that moves a probabilit
 
 - **Read the market's resolution rules before writing the proposition.** "Wins the
   match" can mean regulation only, include overtime, include extra time and penalties,
-  or void on retirement/postponement. Write the exact rule into the proposition and
-  negation text so the experts price the thing that actually pays.
+  or void on retirement/postponement. Write the exact rule into the proposition
+  text so the experts price the thing that actually pays.
 - **Keep home/away attached to the team, not the slot.** When you swap SUBJECT and
   OBJECT for the second framing, move the venue designation with the team. If the venue
   field says "the SUBJECT is the home team" in framing 1, framing 2 must say it of

@@ -15,7 +15,7 @@ description: >
 
 # Chronulus Forecasting
 
-<!-- plugin-version -->Plugin version: 0.2.11<!-- /plugin-version -->
+<!-- plugin-version -->Plugin version: 0.2.12<!-- /plugin-version -->
 
 This skill turns the Chronulus MCP tools into a repeatable forecasting
 pipeline. A Chronulus forecast is **normalized**: the agent returns a value between 0

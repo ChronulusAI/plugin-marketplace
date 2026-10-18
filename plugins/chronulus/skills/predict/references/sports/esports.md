@@ -13,7 +13,7 @@ session per game title**; the evidence that matters differs too much to share on
 |---|---|---|
 | Match / series winner (Bo1, Bo3, Bo5) | binary, matchup schema | format goes in `format_notes` |
 | Map or game winner within a series | binary, matchup schema with series state | needs a separate session from the series winner |
-| Handicap, total maps, exact score | binary, proposition/negation | e.g. "wins the series 2-0" |
+| Handicap, total maps, exact score | binary, proposition | e.g. "wins the series 2-0" |
 | Tournament winner | exclusive-winner | bracket path matters |
 
 A Bo1 is far more random than a Bo3 or Bo5. Do not reuse a calibration across formats

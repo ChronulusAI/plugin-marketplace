@@ -51,7 +51,7 @@ Every skill's text states the plugin version (a line that starts "Plugin version
 - Setting up **one session + one agent per (category, bet type)** that gets reused across
   every future question, instead of recreating either per question.
 - Two input schemas: a **matchup** schema (event-level fields plus symmetric
-  `side1_*`/`side2_*` fields) for contests, and a **proposition/negation** schema for
+  `side1_*`/`side2_*` fields) for contests, and a **proposition** schema for
   thresholds, "by date" events, draws and multi-outcome markets.
 - Data-collection guidance: research instead of fabricate, explicit "not available"
   notes over blanks/guesses, and keeping evidence parallel between sides.
@@ -63,7 +63,7 @@ Every skill's text states the plugin version (a line that starts "Plugin version
   slate of games, or every outcome of a multi-outcome market — including the 32-expert
   batch cap and per-item error handling.
 - **Beyond binary:** eliciting one dual-framed, debiased Beta per outcome (via a
-  proposition/negation input schema instead of fixed sides) and reconciling them into
+  proposition input schema instead of fixed sides) and reconciling them into
   a single Dirichlet with `reconcile_ordinal_outcome_dirichlet` /
   `reconcile_exclusive_outcome_dirichlet` and their `render_*_dirichlet_scorecard`
   counterparts — covering ordinal outcomes (a draw between two win outcomes, a "hold"

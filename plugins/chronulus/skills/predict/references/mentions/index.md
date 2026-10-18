@@ -17,10 +17,10 @@ event: the agenda, the setting, the news cycle and the format.
 
 | Market | Shape | Schema |
 |---|---|---|
-| Will the speaker say a given word or phrase during the event | binary | proposition/negation |
-| Will the word appear at least N times | binary on a threshold | proposition/negation |
+| Will the speaker say a given word or phrase during the event | binary | proposition |
+| Will the word appear at least N times | binary on a threshold | proposition |
 | A set of words in the same event (a "mention bingo" card) | K independent binaries, not mutually exclusive | one binary prediction per word; do **not** reconcile into a Dirichlet |
-| Which word is said first | exclusive-winner | proposition/negation per word |
+| Which word is said first | exclusive-winner | proposition per word |
 
 Note that several words in one event are **not** an exclusive set; each is its own
 yes/no market, so use the binary tools, not the Dirichlet reconciliation.
@@ -34,8 +34,7 @@ situation: >
     spoken at scheduled events. I want independent, well-calibrated probabilities to
     compare against prediction-market prices.
 task: >
-    Predict the probability that the SUBJECT proposition is true, as opposed to the OBJECT
-    proposition (its logical negation), about the stated event, using the
+    Predict the probability that the proposition is true, about the stated event, using the
     evidence provided and the exact resolution rules stated.
 ```
 
@@ -46,7 +45,7 @@ broadcasts, award shows). Reuse across events and words.
 
 Event fields: `event_and_speaker`, `scheduled_datetime_and_length`, `format` (prepared
 remarks, Q&A, interview, panel), `resolution_criteria` (exact word and variants, who
-counts as a speaker, source of truth), `proposition`, `negation`.
+counts as a speaker, source of truth), `proposition`.
 
 Evidence fields:
 - `base_rate_counts` — in how many of the last N comparable events the phrase appeared,

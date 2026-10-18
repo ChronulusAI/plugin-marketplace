@@ -15,7 +15,7 @@ central modeling constraint: say what you could not find, and expect wider Betas
 | Market | Shape / schema | Session name |
 |---|---|---|
 | Match winner | binary, matchup schema | "Volleyball Match Winner Predictor" (one per league or event type) |
-| Set handicap, total sets over/under, exact set score | binary, proposition/negation | separate sessions |
+| Set handicap, total sets over/under, exact set score | binary, proposition | separate sessions |
 | Set winner (rare) | binary, matchup | separate session |
 | Tournament / league winner | exclusive-winner | one session per competition |
 
@@ -98,8 +98,8 @@ Duplicate for SUBJECT and OBJECT:
    matches per call if the 32-expert cap allows.
 4. `render_debiased_prediction_scorecard` for the result, then compare with the
    tradable price.
-5. For total-sets or exact-score markets, use proposition/negation text such as "The
+5. For total-sets or exact-score markets, use proposition text such as "The
    match goes the full five sets", keep the `side1_*` / `side2_*` evidence blocks, and for
-   the second framing flip the evidence and use the exact complement as the proposition. If the market has several exact-score outcomes (3-0, 3-1, 3-2, 2-3, 1-3,
+   the second framing flip the evidence and use the exact complement, worded as an event that happens, as the proposition. If the market has several exact-score outcomes (3-0, 3-1, 3-2, 2-3, 1-3,
    0-3), treat them as one ordinal market in score order and reconcile with
    `render_ordinal_dirichlet_scorecard`.
