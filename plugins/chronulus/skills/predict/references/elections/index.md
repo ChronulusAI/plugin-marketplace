@@ -10,10 +10,10 @@ specific to elections.
 |---|---|---|
 | Two-candidate race winner | binary, order-debiased | matchup with the candidates as SUBJECT/OBJECT, each with their own evidence block → `render_debiased_prediction_scorecard` |
 | Multi-candidate race, primary, or any "exactly one wins" field | exclusive-winner, K outcomes, each candidate order-debiased | one Beta per candidate from candidate-level evidence blocks, debiased → `render_exclusive_dirichlet_scorecard` |
-| Party control (chamber control, seat count buckets) | ordinal buckets (or binary on a threshold) | proposition/negation → `render_ordinal_dirichlet_scorecard` |
-| Vote share, margin, turnout above a threshold | binary on a threshold | proposition/negation with the threshold in the text |
-| Runoff happens / no candidate above 50% | binary | proposition/negation |
-| Referendum / ballot measure passes | binary | proposition/negation |
+| Party control (chamber control, seat count buckets) | ordinal buckets (or binary on a threshold) | proposition → `render_ordinal_dirichlet_scorecard` |
+| Vote share, margin, turnout above a threshold | binary on a threshold | proposition with the threshold in the text |
+| Runoff happens / no candidate above 50% | binary | proposition |
+| Referendum / ballot measure passes | binary | proposition |
 
 Each candidate has their own information set (their polling, money, endorsements, record), so
 a race between candidates is a case for evidence-order debiasing (see "Do you need order
@@ -32,8 +32,7 @@ situation: >
     I am a professional forecaster who evaluates elections. I want independent,
     well-calibrated probabilities to compare against prediction-market prices.
 task: >
-    Predict the probability that the SUBJECT proposition is true, as opposed to the OBJECT
-    proposition (its logical negation), about the stated race, using the
+    Predict the probability that the proposition is true, about the stated race, using the
     evidence provided and the resolution rules stated.
 ```
 
@@ -44,7 +43,7 @@ primary", "UK parliamentary constituency". Reuse it across races of that type.
 
 Event fields: `election_name_and_date`, `office_and_jurisdiction`, `electoral_system`
 (plurality, ranked-choice, runoff, proportional, electoral college), `candidates_and_parties`,
-`resolution_criteria` (source and timing, see Pitfalls), `proposition`, `negation`.
+`resolution_criteria` (source and timing, see Pitfalls), `proposition`.
 
 Evidence fields:
 - `polling_summary` — recent polls with dates, sample, population (adults, registered,

@@ -10,11 +10,11 @@ science.
 
 | Market | Shape | Schema |
 |---|---|---|
-| Will X launch/release/be approved by date D | binary | proposition/negation |
-| When will X happen (date buckets) | ordinal over buckets | proposition/negation per bucket |
-| Which entity leads a ranking on a date (top model, top app, largest company) | exclusive-winner | proposition/negation per candidate |
-| Score, rank or metric above a threshold | binary on a threshold | proposition/negation |
-| Mission or test succeeds | binary | proposition/negation |
+| Will X launch/release/be approved by date D | binary | proposition |
+| When will X happen (date buckets) | ordinal over buckets | proposition per bucket |
+| Which entity leads a ranking on a date (top model, top app, largest company) | exclusive-winner | proposition per candidate |
+| Score, rank or metric above a threshold | binary on a threshold | proposition |
+| Mission or test succeeds | binary | proposition |
 
 ## Session template
 
@@ -24,8 +24,7 @@ situation: >
     I am a professional forecaster who evaluates technology and science events. I want
     independent, well-calibrated probabilities to compare against prediction-market prices.
 task: >
-    Predict the probability that the SUBJECT proposition is true, as opposed to the OBJECT
-    proposition (its logical negation), using the evidence provided and the
+    Predict the probability that the proposition is true, using the evidence provided and the
     resolution rules stated, as of the date supplied.
 ```
 
@@ -35,7 +34,7 @@ launches, FDA decisions, clinical trials, and so on.
 ## Input fields
 
 Event fields: `subject_and_event`, `resolution_criteria` (exact definition of "release",
-"launch" or "approval"), `deadline`, `as_of_date`, `proposition`, `negation`.
+"launch" or "approval"), `deadline`, `as_of_date`, `proposition`.
 
 Evidence fields:
 - `official_schedule` — announced dates, regulatory calendars (decision dates for drug

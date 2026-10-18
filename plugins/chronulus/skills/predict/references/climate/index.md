@@ -19,11 +19,11 @@ seasonal outlooks and trend.
 
 | Market | Shape | Schema |
 |---|---|---|
-| Daily high/low above a temperature at a station | binary on a threshold | proposition/negation, forecast in evidence |
-| Temperature range buckets | ordinal | proposition/negation per bucket → `render_ordinal_dirichlet_scorecard` |
-| Monthly rainfall or snowfall above a level | binary on a threshold | proposition/negation |
-| Number of named storms, hurricanes, landfalls above N | binary on a threshold or ordinal buckets | proposition/negation |
-| Annual or monthly global temperature anomaly rank or threshold | binary or ordinal | proposition/negation |
+| Daily high/low above a temperature at a station | binary on a threshold | proposition, forecast in evidence |
+| Temperature range buckets | ordinal | proposition per bucket → `render_ordinal_dirichlet_scorecard` |
+| Monthly rainfall or snowfall above a level | binary on a threshold | proposition |
+| Number of named storms, hurricanes, landfalls above N | binary on a threshold or ordinal buckets | proposition |
+| Annual or monthly global temperature anomaly rank or threshold | binary or ordinal | proposition |
 
 ## Session template
 
@@ -33,8 +33,7 @@ situation: >
     I am a professional forecaster who evaluates weather and climate outcomes. I want
     independent, well-calibrated probabilities to compare against prediction-market prices.
 task: >
-    Predict the probability that the SUBJECT proposition is true, as opposed to the OBJECT
-    proposition (its logical negation), using the forecast and climatology
+    Predict the probability that the proposition is true, using the forecast and climatology
     provided and the resolution rules stated, as of the date supplied.
 ```
 
@@ -44,7 +43,7 @@ global anomaly markets.
 ## Input fields
 
 Event fields: `location_and_station`, `metric_and_period`, `resolution_criteria` (source,
-units, rounding, time window, see Pitfalls), `as_of_date`, `proposition`, `negation`.
+units, rounding, time window, see Pitfalls), `as_of_date`, `proposition`.
 
 Evidence fields:
 - `official_forecast` — the forecast from the national weather service for the location

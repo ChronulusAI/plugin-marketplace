@@ -9,9 +9,9 @@ player (not a team) is the subject, which makes the matchup schema a direct fit.
 | Market | Shape / schema | Session name |
 |---|---|---|
 | Match winner | binary, matchup schema | "ATP Match Winner Predictor" / "WTA Match Winner Predictor" |
-| Wins in straight sets | binary, proposition/negation | "ATP Straight Sets Predictor" |
-| Wins at least one set | binary, proposition/negation | "ATP One Set Predictor" |
-| Total games / sets over-under, handicap | binary, proposition/negation | separate sessions |
+| Wins in straight sets | binary, proposition | "ATP Straight Sets Predictor" |
+| Wins at least one set | binary, proposition | "ATP One Set Predictor" |
+| Total games / sets over-under, handicap | binary, proposition | separate sessions |
 | Tournament winner | exclusive-winner over the draw | one session per tournament |
 
 ATP and WTA get separate sessions because best-of format, depth and variance differ.
@@ -97,9 +97,10 @@ Duplicate for SUBJECT and OBJECT unless noted:
    round of matches in one call if the 32-expert cap allows (3 matches at 5 experts).
 4. `render_debiased_prediction_scorecard`, then compare against the tradable price.
 5. For set-based questions (straight sets, at least one set) use separate sessions with
-   proposition/negation text such as "The SUBJECT wins the match without losing a set"
-   and its negation, keep the `side1_*` / `side2_*` evidence blocks, and dual-frame by
-   flipping the evidence and using the exact complement as the reversed proposition.
+   proposition text such as "The SUBJECT wins the match without losing a set",
+   keep the `side1_*` / `side2_*` evidence blocks, and dual-frame by flipping the
+   evidence and using the exact complement, worded as an event that happens, as the
+   reversed proposition.
 6. For a tournament winner, treat the draw as an exclusive-winner field, but note that
    early-round probabilities depend on the bracket path; run the per-player
    propositions together and reconcile with `render_exclusive_dirichlet_scorecard`.

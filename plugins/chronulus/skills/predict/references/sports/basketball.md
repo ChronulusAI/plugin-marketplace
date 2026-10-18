@@ -10,10 +10,10 @@ playing.
 | Market | Shape / schema | Session name |
 |---|---|---|
 | Moneyline (game winner) | binary, matchup schema | "NBA Moneyline Predictor", "NCAA Basketball Moneyline Predictor" |
-| Spread cover | binary, proposition/negation: "SUBJECT wins by more than X" | separate session |
-| Total points over/under | binary, proposition/negation | separate session |
+| Spread cover | binary, proposition: "SUBJECT wins by more than X" | separate session |
+| Total points over/under | binary, proposition | separate session |
 | Series winner (best of 5 or 7) | binary, matchup schema + series state | "NBA Playoff Series Winner Predictor" |
-| Player props | binary, proposition/negation | separate session, thin evidence |
+| Player props | binary, proposition | separate session, thin evidence |
 | Season win totals, MVP, championship | exclusive-winner or binary threshold | one session per market |
 
 Use separate sessions for each league: pace, depth, rest and officiating differ across
@@ -96,4 +96,4 @@ Duplicate for SUBJECT and OBJECT:
 4. `render_debiased_prediction_scorecard`, then compare with the tradable price.
 5. For series winners, run the matchup schema with `series_state` populated, and
    re-run after each game as the state changes.
-6. For spread or total markets, use proposition/negation with the exact line.
+6. For spread or total markets, use proposition with the exact line.

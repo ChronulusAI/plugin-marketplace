@@ -58,7 +58,7 @@ closest sport file when you need a detailed schema.
   match, a series. `side1_*` / `side2_*` fields, SUBJECT and OBJECT.
 - **Proposition schema** ("Beyond binary" below, and "Questions that aren't matchups"):
   everything else — thresholds, "by date" events, draws, multi-outcome markets,
-  exclusive-winner fields. `proposition` / `negation` fields.
+  exclusive-winner fields. A single `proposition` field.
 
 Whichever schema you use, the batching and reconciliation mechanics below are identical, and
 the dual-framing mechanics apply to the questions that need it (see "Do you need order
@@ -236,7 +236,7 @@ not correct how a question is worded, or how much evidence each side has.**
 question:** "will the bill pass by June 30?", "will CPI print above 0.3%?", "will the company
 ship by Q3?", "will the speaker say X?", "will turnout top 60%?". For most questions the
 evidence for Yes and for No cannot be cleanly pulled apart into two sets. Send the
-`proposition` and its exact `negation` once, report `probability` together with the
+`proposition` once, report `probability` together with the
 `alpha + beta` spread, and show it with `render_prediction_scorecard`.
 
 **Order-debias when it is natural to hold a separate set of evidence for each side:** a
@@ -268,7 +268,7 @@ product launches into; the job market around two offers. Keep this in the event-
 **identical in both runs**. Only the competitors' own evidence blocks trade places, along with
 the subject of the proposition.
 
-Do not make a second run by only rewording, or by swapping `proposition` and `negation` while
+Do not make a second run by only rewording, or by replacing the proposition with its complement while
 the evidence stays put. With one information set there is no order to cancel, so that is not
 the technique, and it only doubles the cost.
 
@@ -449,24 +449,27 @@ Most non-sports markets have no pair of sides: "will X happen by D?", "will the 
 exceed T?". (A race between candidates is the exception: each candidate has their own
 information set, so treat the candidates as competing sides; see below.) Use the **proposition schema**
 from "Beyond binary" below even when there are only two outcomes. The agent keeps one
-fixed input model, and each call carries two fields:
+fixed input model, and each call carries one statement field:
 
-- `proposition` — the SUBJECT statement whose probability is being assessed, written as
-  a complete, checkable sentence with its threshold, date, source and timezone.
-- `negation` — the OBJECT statement, the exact logical complement of the proposition
-  (everything that makes the market resolve No, including edge cases like ties,
-  cancellation or a missed deadline).
+- `proposition` — the statement whose probability is being assessed, written as a
+  complete, checkable sentence with its threshold, date, source and timezone. State
+  the event as something that happens, and spell out what counts, including edge
+  cases like ties, cancellation or a missed deadline.
+
+Do not add a field for the opposite statement. Chronulus works out the complementary
+question itself, and a second statement in the inputs only gives it two things to
+reconcile.
 
 Whether to debias depends on whether the evidence has two sides (see "Do you need order
 debiasing?" above):
 
 - **No competing sides** (a threshold, a date, one word in a speech — most of these
   questions): the research is one information set, so there is no order to
-  cancel. Run **one** prediction and report it; do not swap `proposition` ↔ `negation`
-  for a second run.
+  cancel. Run **one** prediction and report it; do not replace the proposition
+  with its complement for a second run.
 - **Two or more competing sides, each with its own evidence** (a match where a draw or other
   outcomes are possible, or a race between candidates): keep the `side1_*` / `side2_*` evidence blocks next to
-  `proposition` / `negation` and debias by flipping the evidence exactly as in a matchup.
+  `proposition` and debias by flipping the evidence exactly as in a matchup.
   See "Beyond binary" below.
 
 Around those fields, build the input model from the category reference: an event block
@@ -477,7 +480,7 @@ Four habits make these questions work:
 
 1. **Put the resolution rule in the text.** The market pays on its rules, not on the
    headline: the source, the timestamp, which print counts, whether a tie or void
-   applies. Copy the rule into `resolution_criteria` and into the proposition/negation.
+   applies. Copy the rule into `resolution_criteria` and into the proposition.
 2. **State the `as_of_date`.** Probabilities age; the agent should know how current the
    evidence is and how much time remains.
 3. **Give numeric questions a numeric baseline.** For thresholds on prices, indices,
@@ -626,7 +629,7 @@ BOTH of its immediate neighbors.
 ### 2. Elicit one binary proposition per outcome, not one per matchup
 
 Keep the matchup schema from Step 2 above — the event-level fields and the `side1_*` /
-`side2_*` evidence blocks — and add two statement fields, so the same agent can be asked
+`side2_*` evidence blocks — and add a statement field, so the same agent can be asked
 about any outcome of the match, not just "does side1 win":
 
 - **Event-level fields** (competition, venue, `event_datetime`, format and stakes,
@@ -634,33 +637,35 @@ about any outcome of the match, not just "does side1 win":
 - **Evidence blocks**: `side1_*` (the SUBJECT) and `side2_*` (the OBJECT), with the same
   field names in both — name, form, availability, matchup stats, motivation. Same guidance
   as Step 2 above.
-- `proposition` — "The SUBJECT proposition whose probability is being assessed"
-- `negation` — "The OBJECT proposition — the logical negation of the SUBJECT proposition"
+- `proposition` — "The proposition whose probability is being assessed", written as an
+  event that happens (a team wins, the match is drawn), never as something that fails
+  to happen.
 
 This is still **one session + one agent for the whole market** (e.g. one agent for
 "soccer match outcome", not three). Per call, three things vary: which competitor's
-evidence sits in the SUBJECT slot, the `proposition` and the `negation`. A 3-outcome
+evidence sits in the SUBJECT slot, and the `proposition`. A 3-outcome
 soccer match is three outcomes, each run in two framings (6 calls per matchup):
 
-| Call | Evidence in `side1_*` / `side2_*` | proposition | negation |
-|---|---|---|---|
-| Team A win, orig | A / B | "Team A wins the match outright (not tied or defeated at full time)" | "Team A does not win outright (Team B wins, or the match ends in a draw)" |
-| Team A win, rev | **B / A** | "Team A does not win outright (Team B wins, or the match ends in a draw)" | "Team A wins the match outright (not tied or defeated at full time)" |
-| Team B win, orig | A / B | "Team B wins the match outright (not tied or defeated at full time)" | "Team B does not win outright (Team A wins, or the match ends in a draw)" |
-| Team B win, rev | **B / A** | "Team B does not win outright (Team A wins, or the match ends in a draw)" | "Team B wins the match outright (not tied or defeated at full time)" |
-| Draw, orig | A / B | "The match ends in a draw at full time" | "The match does not end in a draw (Team A or Team B wins outright)" |
-| Draw, rev | **B / A** | "The match does not end in a draw (Team A or Team B wins outright)" | "The match ends in a draw at full time" |
+| Call | Evidence in `side1_*` / `side2_*` | proposition |
+|---|---|---|
+| Team A win, orig | A / B | "Team A wins the match outright (Team A is ahead at full time)" |
+| Team A win, rev | **B / A** | "Team B wins the match or the match ends in a draw at full time" |
+| Team B win, orig | A / B | "Team B wins the match outright (Team B is ahead at full time)" |
+| Team B win, rev | **B / A** | "Team A wins the match or the match ends in a draw at full time" |
+| Draw, orig | A / B | "The match ends in a draw at full time" |
+| Draw, rev | **B / A** | "Team A or Team B wins the match outright at full time" |
 
 How to read the table:
 
 - **The flip is the evidence.** In the reversed call the two evidence blocks trade
   places: B's name and information go into `side1_*`, A's into `side2_*`. Event-level
   fields stay exactly as they were.
-- **The statements follow the evidence.** The SUBJECT slot now holds the other competitor,
-  so the SUBJECT statement must describe that side of the question: the exact complement
-  of the original proposition. That is why the reversed proposition is the original
-  negation (and the reverse). The negated wording is a consequence of the flip, not the
-  goal of it.
+- **The statement follows the evidence.** The SUBJECT slot now holds the other competitor,
+  so the proposition must describe that side of the question: the exact complement of
+  the original proposition. Write that complement as an event that happens ("Team B wins
+  or the match is drawn"), not as a denial of the original ("Team A does not win").
+  Send only this one statement; do not also send the original proposition or a
+  separate negation field.
 - **The reversed Beta describes the complement.** Because the reversed proposition is the
   exact complement of the original, the reversed call's `alpha` is evidence for the
   complement event (against your outcome) and its `beta` is evidence against it (for your
@@ -670,10 +675,10 @@ How to read the table:
   the complement of "A wins", and averaging the two would absorb the draw's probability.
 
 For an ordinal market with more categories (e.g. the rate-decision ladder), the same idea
-applies with one proposition/negation pair per category. When the outcomes have no
+applies with one proposition per category. When the outcomes have no
 competing sides at all (a threshold ladder, a set of date buckets), the research is one
 information set and there is no evidence to flip: ask each outcome **once** (its
-proposition and exact negation), skip step 3, and pass each outcome's raw `beta_params`
+proposition), skip step 3, and pass each outcome's raw `beta_params`
 as its `alpha` / `beta` in step 4.
 
 ### 3. Debias each outcome independently (only when the outcomes have competing evidence)
@@ -691,8 +696,9 @@ completely independently per outcome, before any reconciliation happens:
 # Repeat this block once per outcome (e.g. once for "Team A win", once for "Team B win", once for "Draw").
 # `match` = the event-level fields, identical in both calls. sides(first, second) fills
 # side1_* from `first` and side2_* from `second` — the reversed call flips them.
-pred_orig = reuse_prediction_agent_and_get_prediction(agent_id, input_data={**match, **sides(a, b), "proposition": prop, "negation": neg}, num_experts=2)
-pred_rev  = reuse_prediction_agent_and_get_prediction(agent_id, input_data={**match, **sides(b, a), "proposition": neg,  "negation": prop}, num_experts=2)
+# `prop` is the outcome as an event that happens; `comp` is its exact complement, also worded as an event.
+pred_orig = reuse_prediction_agent_and_get_prediction(agent_id, input_data={**match, **sides(a, b), "proposition": prop}, num_experts=2)
+pred_rev  = reuse_prediction_agent_and_get_prediction(agent_id, input_data={**match, **sides(b, a), "proposition": comp}, num_experts=2)
 
 alpha_star = (pred_orig["beta_params"]["alpha"] + pred_rev["beta_params"]["beta"])  * 0.5
 beta_star  = (pred_orig["beta_params"]["beta"]  + pred_rev["beta_params"]["alpha"]) * 0.5
@@ -783,24 +789,24 @@ separate call needed — when the user wants to see the result.
 ```
 # One-time setup — same agent handles all three outcomes and both framings
 session_id = create_chronulus_session(name="Soccer Match Result Predictor", situation=..., task=...)
-first = create_prediction_agent_and_get_predictions(session_id, input_data_model=<event fields + proposition/negation>, input_data=<match context + first proposition/negation>, num_experts=2)
+first = create_prediction_agent_and_get_predictions(session_id, input_data_model=<event fields + proposition>, input_data=<match context + first proposition>, num_experts=2)
 agent_id = first["agent_id"]
 
 # Dual-frame each of the three outcomes as ONE batch: 3 outcomes x 2 framings x 2 experts = 12 <= 32.
 # match = event-level fields (identical in every call); sides(first, second) fills side1_* from
 # `first` and side2_* from `second`. The reversed call flips the evidence and takes the exact
-# complement statements, so its proposition is the original negation.
+# complement of the proposition, worded as an event that happens.
 props = {
-    "a_win": ("Team A wins the match outright...", "Team A does not win outright..."),
-    "b_win": ("Team B wins the match outright...", "Team B does not win outright..."),
-    "tie":   ("The match ends in a draw at full time", "The match does not end in a draw..."),
+    "a_win": ("Team A wins the match outright...", "Team B wins the match or the match ends in a draw..."),
+    "b_win": ("Team B wins the match outright...", "Team A wins the match or the match ends in a draw..."),
+    "tie":   ("The match ends in a draw at full time", "Team A or Team B wins the match outright..."),
 }
 items = {}
-for name, (prop_text, neg_text) in props.items():
+for name, (prop_text, comp_text) in props.items():
     items[f"{name}:orig"] = {"agent_id": agent_id, "num_experts": 2,
-                             "input_data": {**match, **sides(team_a, team_b), "proposition": prop_text, "negation": neg_text}}
+                             "input_data": {**match, **sides(team_a, team_b), "proposition": prop_text}}
     items[f"{name}:rev"]  = {"agent_id": agent_id, "num_experts": 2,
-                             "input_data": {**match, **sides(team_b, team_a), "proposition": neg_text,  "negation": prop_text}}
+                             "input_data": {**match, **sides(team_b, team_a), "proposition": comp_text}}
 results = batch_reuse_prediction_agents_and_get_predictions(items=items)
 # check results[key] for an "error" key before using it; re-run any item that failed
 
@@ -873,16 +879,17 @@ render_debiased_prediction_scorecard(
 
 ```
 # Beyond binary (K > 2 outcomes): dual-frame each outcome (one batch), debias each, then render.
-# Two competing sides: the reversed call flips the evidence (sides(b, a)). No sides: drop
-# sides() and swap only proposition/negation.
+# Two competing sides: the reversed call flips the evidence (sides(b, a)) and carries the
+# complement of the proposition. No sides: there is nothing to flip, so drop sides() and the
+# :rev items and ask each outcome once.
 results = batch_reuse_prediction_agents_and_get_predictions(items={
     f"{label}:orig": {"agent_id": agent_id, "num_experts": 2,
-                      "input_data": {**match, **sides(a, b), "proposition": prop, "negation": neg}}
-    for label, (prop, neg) in outcome_propositions.items()
+                      "input_data": {**match, **sides(a, b), "proposition": prop}}
+    for label, (prop, comp) in outcome_propositions.items()
 } | {
     f"{label}:rev":  {"agent_id": agent_id, "num_experts": 2,
-                      "input_data": {**match, **sides(b, a), "proposition": neg,  "negation": prop}}
-    for label, (prop, neg) in outcome_propositions.items()
+                      "input_data": {**match, **sides(b, a), "proposition": comp}}
+    for label, (prop, comp) in outcome_propositions.items()
 })   # 2 experts per framing; 2K items x num_experts must total <= 32
 
 def pair(label):

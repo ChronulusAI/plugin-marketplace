@@ -24,11 +24,11 @@ Split crypto markets into two kinds, because they need different tools:
 
 | Market | Shape | Schema |
 |---|---|---|
-| Price above/below a level at a time | binary on a threshold | proposition/negation; pass the quant baseline as evidence |
-| Price range buckets at a time | ordinal over buckets | proposition/negation per bucket, reconcile with `render_ordinal_dirichlet_scorecard` |
-| Touch a level any time before D | binary, path-dependent | proposition/negation; barrier probability is not terminal probability |
-| Event by date | binary | proposition/negation |
-| Which token/exchange/company does X first | exclusive-winner | proposition/negation per candidate |
+| Price above/below a level at a time | binary on a threshold | proposition; pass the quant baseline as evidence |
+| Price range buckets at a time | ordinal over buckets | proposition per bucket, reconcile with `render_ordinal_dirichlet_scorecard` |
+| Touch a level any time before D | binary, path-dependent | proposition; barrier probability is not terminal probability |
+| Event by date | binary | proposition |
+| Which token/exchange/company does X first | exclusive-winner | proposition per candidate |
 
 ## Session template
 
@@ -39,8 +39,7 @@ situation: >
     levels. I want independent, well-calibrated probabilities to compare against
     prediction-market prices.
 task: >
-    Predict the probability that the SUBJECT proposition is true, as opposed to the OBJECT
-    proposition (its logical negation), using the evidence provided and the
+    Predict the probability that the proposition is true, using the evidence provided and the
     resolution rules stated, as of the date supplied.
 ```
 
@@ -50,7 +49,7 @@ technical events, and company or institutional announcements.
 ## Input fields
 
 Event fields: `asset_or_entity`, `resolution_criteria` (see Pitfalls), `as_of_date`,
-`proposition`, `negation`.
+`proposition`.
 
 Evidence fields:
 - `market_snapshot` — spot price, recent range, realized and implied volatility, funding

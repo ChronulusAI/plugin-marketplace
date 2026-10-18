@@ -8,10 +8,10 @@
 | Market | Shape / schema | Session name |
 |---|---|---|
 | Moneyline (game winner) | binary, matchup schema | "NFL Moneyline Predictor" / "College Football Moneyline Predictor" |
-| Spread cover | binary, proposition/negation: "SUBJECT wins by more than X" | "NFL Spread Cover Predictor" |
-| Total points over/under | binary, proposition/negation | "NFL Game Total Predictor" |
+| Spread cover | binary, proposition: "SUBJECT wins by more than X" | "NFL Spread Cover Predictor" |
+| Total points over/under | binary, proposition | "NFL Game Total Predictor" |
 | Season win total, division / conference / Super Bowl winner | exclusive-winner (futures) or binary threshold | one session per futures market |
-| Player props (passing yards, anytime TD) | binary, proposition/negation | separate sessions; thin evidence, treat results cautiously |
+| Player props (passing yards, anytime TD) | binary, proposition | separate sessions; thin evidence, treat results cautiously |
 
 NFL and college football are different sessions even for the same bet type: roster
 depth, parity, scheduling, and the amount of information differ a lot.
@@ -89,7 +89,7 @@ Add to the `SKILL.md` Step 2 schema, duplicated for SUBJECT and OBJECT:
 5. Periodically call `get_risk_assessment_scorecard(session_id)` to check calibration
    over the session.
 
-For spread or total markets, switch to the proposition/negation schema, keeping the
+For spread or total markets, switch to the proposition schema, keeping the
 `side1_*` / `side2_*` evidence blocks, and run the same dual-framing: flip the two
-evidence blocks and write the reversed statement as the exact complement of the original
-(see "Beyond binary" in `SKILL.md`).
+evidence blocks and write the reversed statement as the exact complement of the original,
+worded as an event that happens (see "Beyond binary" in `SKILL.md`).

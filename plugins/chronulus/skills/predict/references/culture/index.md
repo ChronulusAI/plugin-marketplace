@@ -9,11 +9,11 @@ file adds what is specific to these markets.
 
 | Market | Shape | Schema |
 |---|---|---|
-| Award category winner | exclusive-winner over nominees | proposition/negation per nominee → `render_exclusive_dirichlet_scorecard` |
-| Box office, chart position, rating, follower count above a threshold | binary on a threshold | proposition/negation |
-| Chart rank buckets | ordinal | proposition/negation per bucket |
-| Competition show winner, "who goes home" | exclusive-winner | proposition/negation per contestant |
-| Event occurs by date (release, announcement, appearance) | binary | proposition/negation |
+| Award category winner | exclusive-winner over nominees | proposition per nominee → `render_exclusive_dirichlet_scorecard` |
+| Box office, chart position, rating, follower count above a threshold | binary on a threshold | proposition |
+| Chart rank buckets | ordinal | proposition per bucket |
+| Competition show winner, "who goes home" | exclusive-winner | proposition per contestant |
+| Event occurs by date (release, announcement, appearance) | binary | proposition |
 
 ## Session template
 
@@ -23,8 +23,7 @@ situation: >
     I am a professional forecaster who evaluates entertainment and culture outcomes. I
     want independent, well-calibrated probabilities to compare against prediction-market prices.
 task: >
-    Predict the probability that the SUBJECT proposition is true, as opposed to the OBJECT
-    proposition (its logical negation), using the evidence provided and the
+    Predict the probability that the proposition is true, using the evidence provided and the
     resolution rules stated.
 ```
 
@@ -34,7 +33,7 @@ weekend box office", "Billboard Hot 100 number one", "Rotten Tomatoes score", an
 ## Input fields
 
 Event fields: `event_name_and_date`, `resolution_criteria` (which source, which metric,
-which timestamp), `proposition`, `negation`.
+which timestamp), `proposition`.
 
 Evidence fields vary by domain; the common set is:
 - `candidates_and_context` — nominees or contenders with the relevant facts.
