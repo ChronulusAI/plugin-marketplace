@@ -3,11 +3,12 @@ name: forecast
 description: >
   Best practices for using the Chronulus MCP server to produce time-series
   forecasts with the NormalizedForecaster — demand, foot traffic, share of volume,
-  seasonal weights, occupancy, or any quantity over a future horizon of hours, days or
-  weeks, with no historical data required. Use whenever a user asks Claude to forecast,
+  seasonal weights, occupancy, or any quantity over a future horizon of hours, days,
+  weeks or months, with no historical data required. Use whenever a user asks Claude to forecast,
   project, predict a trend over time, or plot a forecast with Chronulus in Claude.ai or
   Claude Code. Covers writing the session (situation + task), designing one reusable
-  input_data_model, setting the horizon, reusing one agent across many items, rescaling
+  input_data_model, setting the horizon (including monthly forecasts and how months are
+  dated), reusing one agent across many items, rescaling
   the 0–1 forecast into real units with y_min/y_max (and invert_scale), showing the
   result with render_forecast_scorecard instead of hand-building a chart, and the
   optional on-demand risk scorecard.
@@ -95,13 +96,15 @@ create_forecasting_agent_and_get_forecast(
     input_data_model=[...],
     input_data={...this item's values...},
     forecast_start_dt_str="2026-11-01 00:00:00",   # first period, '%Y-%m-%d %H:%M:%S'
-    time_scale="days",                               # 'hours', 'days' or 'weeks'
+    time_scale="days",                               # 'hours', 'days', 'weeks' or 'months'
     horizon_len=60,                                  # number of periods (default 60 days)
+    month_anchor=None,                               # months only: 'start' (default), 'end', 'day_given'
 )
 ```
 
 Choose `time_scale` and `horizon_len` from what the user asked for ("next quarter, by
-week" → `weeks`, 13). Keep the horizon as short as the decision needs.
+week" → `weeks`, 13; "next year by month" → `months`, 12). Keep the horizon as short as the
+decision needs.
 
 **Longest horizon per `time_scale`:**
 
@@ -110,6 +113,7 @@ week" → `weeks`, 13). Keep the horizon as short as the decision needs.
 | `hours` | 168 | 1 week |
 | `days` | 365 | 1 year |
 | `weeks` | 260 | 5 years |
+| `months` | 120 | 10 years |
 
 A longer request is rejected before anything runs and nothing is charged, so stay within
 these limits. For a longer span, use a coarser `time_scale` (for example `weeks` for a
@@ -117,13 +121,40 @@ multi-year view) or split it into several forecasts. The result has
 `agent_id`, `prediction_id`, `data` (one row per period, `y_hat` between 0 and 1) and
 `explanation`. **Save `agent_id` and `prediction_id`.**
 
+### Monthly forecasts
+
+Use `time_scale="months"` when the user thinks in calendar months (monthly sales, budgets,
+seasonal weights by month) and `horizon_len` is the number of months. The first month is the
+one that contains `forecast_start_dt_str`, so a start of `2027-01-20` with `horizon_len=12`
+covers January 2027 through December 2027. `month_anchor` says how each month is dated in the
+result:
+
+| `month_anchor` | Each row is dated | Use it for |
+|---|---|---|
+| `'start'` (default) | the 1st of the month (`2027-01-01`, `2027-02-01`, ...) | calendar-month data: sales, demand, budgets, seasonal weights |
+| `'end'` | the last day of the month (`2027-01-31`, `2027-02-28`, ...) | month-end measures: balances, inventory, ARR snapshots |
+| `'day_given'` | the same day of the month as `forecast_start_dt_str` (a start on the 31st uses the last day of shorter months) | a process that starts mid-month, such as a billing cycle that begins on the 15th |
+
+Leave `month_anchor` out unless the user wants one of the other two; the default is the 1st.
+It is only used with `time_scale="months"`. An unknown value is an error and nothing runs. The
+dates in the result are the anchor's dates, not the start date's, so a mid-month start still
+returns the whole first month.
+
+```
+create_forecasting_agent_and_get_forecast(
+    session_id=..., input_data_model=[...], input_data={...},
+    forecast_start_dt_str="2027-01-01 00:00:00",
+    time_scale="months", horizon_len=12, month_anchor="end",   # month-end dates
+)
+```
+
 Every later item:
 
 ```
 reuse_forecasting_agent_and_get_forecast(
     agent_id=<saved agent_id>,
     input_data={...new item's values, same field names...},
-    forecast_start_dt_str=..., time_scale=..., horizon_len=...,
+    forecast_start_dt_str=..., time_scale=..., horizon_len=..., month_anchor=...,  # month_anchor: months only
 )
 ```
 
@@ -160,9 +191,11 @@ render_forecast_scorecard(
   `{"date": ..., "label": ...}`. Keep each label **very short, a few words and at most 24
   characters** ("Black Friday", "Launch"), and mark only the events that explain the shape of
   the forecast (a holiday, a launch, a known outage), not every peak and dip: many labels
-  clutter the plot. The date must be inside the forecast's range (`YYYY-MM-DD`, or an ISO date
-  and time for hourly forecasts); one outside it is an error.
-- The summary card under the plot shows the **horizon**, the **grain** (hourly, daily, weekly)
+  clutter the plot. The date must be one of the forecast's own row dates (`YYYY-MM-DD`, or an ISO
+  date and time for hourly forecasts); one that is outside the forecast or does not match a row
+  is an error. For a weekly or monthly forecast that means the period's date, for example
+  `2027-12-01` on a monthly forecast dated the 1st, not `2027-12-15`.
+- The summary card under the plot shows the **horizon**, the **grain** (hourly, daily, weekly, monthly)
   and the **scale min and max**: 0 and 1 for a normalized forecast, or your `y_min` and `y_max`
   when rescaled. It reads these from the forecast and your arguments, so there is nothing to
   pass for them.
@@ -265,6 +298,7 @@ session_id = create_chronulus_session(name=..., situation=..., task=...)
 first = create_forecasting_agent_and_get_forecast(
     session_id, input_data_model, input_data,
     forecast_start_dt_str="YYYY-MM-DD HH:MM:SS", time_scale="days", horizon_len=60)
+    # time_scale="months" takes month_anchor="start" (default) | "end" | "day_given" as well
 agent_id, prediction_id = first["agent_id"], first["prediction_id"]
 cost = first["billing"]["cost_usd"]        # what this call cost; report it as given
 
